@@ -1,0 +1,30 @@
+{
+  "name": "parking-bot",
+  "version": "0.1.0",
+  "description": "Telegram bot for finding and booking parking spots in Ethiopia (Addis Ababa)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "db:reset": "docker compose down -v && docker compose up -d db && node scripts/migrate.js && node scripts/seed.js",
+    "lint": "eslint src scripts",
+    "format": "prettier --write \"**/*.{js,json,md}\""
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "grammy": "^1.30.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.3"
+  }
+}

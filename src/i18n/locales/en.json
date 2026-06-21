@@ -1,0 +1,95 @@
+{
+  "common": {
+    "app_name": "ParkAddis",
+    "back": "« Back",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No",
+    "done": "Done",
+    "skip": "Skip",
+    "error_generic": "Something went wrong. Please try again.",
+    "not_registered": "Please send /start first.",
+    "banned": "Your account has been suspended. Contact support."
+  },
+  "start": {
+    "choose_language": "Welcome to {app}! 🚗\nPlease choose your language:",
+    "welcome_driver": "Hi {name}! 👋\n\nShare your live location and I'll find parking spots near you.\n\nUse the menu below to get started.",
+    "language_set": "Language set to English. ✅"
+  },
+  "language": {
+    "english": "🇬🇧 English",
+    "amharic": "🇪🇹 አማርኛ",
+    "changed": "Language updated. ✅"
+  },
+  "menu": {
+    "find_parking": "🅿️ Find parking",
+    "my_bookings": "📋 My bookings",
+    "become_host": "🏠 List your spot",
+    "my_spots": "🏠 My spots",
+    "language": "🌐 Language",
+    "help": "ℹ️ Help"
+  },
+  "nearby": {
+    "ask_location": "📍 Tap the button below to share your location, and I'll find nearby parking.",
+    "share_location_button": "📍 Share my location",
+    "searching": "🔎 Searching for parking near you...",
+    "none_found": "No available parking found within {radius} km. Try moving the search area or check back later.",
+    "results_header": "Found {count} spot(s) near you:",
+    "results_header_far": "No spots within {radius} km, but here are the closest ones (nearest is {distance} away):",
+    "spot_line": "{index}. {address} — {price} {currency}/hr · {distance}{badges}",
+    "open_map": "🗺️ Open map view",
+    "view_spot": "View",
+    "book_spot": "Book #{index}"
+  },
+  "spot": {
+    "details_title": "🅿️ {address}",
+    "price": "💵 Price: {price} {currency}/hour",
+    "distance": "📏 Distance: {distance}",
+    "capacity": "🚗 Capacity: {capacity}",
+    "rating": "⭐ Rating: {rating} ({count} reviews)",
+    "no_rating": "⭐ No ratings yet",
+    "amenities": "✨ Amenities: {list}",
+    "covered": "Covered",
+    "guarded": "Guarded",
+    "ev_charging": "EV charging",
+    "amenities_none": "—",
+    "book_now": "📅 Book this spot",
+    "show_on_map": "🗺️ Show on map"
+  },
+  "booking": {
+    "choose_start": "When do you want to start parking?",
+    "start_now": "▶️ Start now",
+    "start_in_30": "In 30 min",
+    "start_in_60": "In 1 hour",
+    "choose_duration": "For how long?",
+    "duration_hours": "{hours} hour(s)",
+    "summary_title": "📋 Booking summary",
+    "summary_body": "Spot: {address}\nStart: {start}\nEnd: {end}\nDuration: {hours} hr\nTotal: {total} {currency}",
+    "confirm": "✅ Confirm reservation",
+    "confirm_pending_note": "Payment will be added in the next step. For now this just reserves the spot.",
+    "reserved_title": "✅ Reserved!",
+    "reserved_body": "Your confirmation code is *{code}*.\n\nSpot: {address}\nStart: {start}\nEnd: {end}\nTotal: {total} {currency}\n\nShow this code to the host on arrival.",
+    "conflict_full": "Sorry, this spot just got fully booked for that time. Please pick another spot or time.",
+    "spot_unavailable": "This spot is no longer available. Please choose another.",
+    "cancelled": "Booking cancelled.",
+    "none": "You have no bookings yet.",
+    "list_item": "{code} · {address}\n{start} → {end} · {status} · {total} {currency}",
+    "host_notified_title": "🔔 New reservation!",
+    "host_notified_body": "{address}\nCode: {code}\n{start} → {end}\nDriver: {driver}\nTotal: {total} {currency}"
+  },
+  "status": {
+    "pending": "Pending",
+    "reserved": "Reserved",
+    "confirmed": "Confirmed",
+    "active": "Active",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "expired": "Expired"
+  },
+  "help": {
+    "text": "{app} helps you find and book parking in Addis Ababa.\n\n• 🅿️ Find parking — share your location to see nearby spots\n• 📋 My bookings — see your reservations\n• 🏠 List your spot — earn money renting your parking\n• 🌐 Language — switch between English and Amharic\n\nNeed help? Contact support."
+  },
+  "host": {
+    "coming_soon": "Host onboarding is coming soon. 🏠"
+  }
+}

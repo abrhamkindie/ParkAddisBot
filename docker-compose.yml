@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: parking-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: parking
+    ports:
+      # Host 5433 → container 5432 (host 5432 is taken by a native Postgres)
+      - "5433:5432"
+    volumes:
+      - parking_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking -d parking"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  parking_pgdata:

@@ -1,0 +1,95 @@
+{
+  "common": {
+    "app_name": "ፓርክአዲስ",
+    "back": "« ተመለስ",
+    "cancel": "ሰርዝ",
+    "yes": "አዎ",
+    "no": "አይ",
+    "done": "ተጠናቋል",
+    "skip": "ዝለል",
+    "error_generic": "የሆነ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    "not_registered": "እባክዎ መጀመሪያ /start ይላኩ።",
+    "banned": "መለያዎ ታግዷል። ድጋፍን ያግኙ።"
+  },
+  "start": {
+    "choose_language": "ወደ {app} እንኳን በደህና መጡ! 🚗\nእባክዎ ቋንቋዎን ይምረጡ:",
+    "welcome_driver": "ሰላም {name}! 👋\n\nቀጥታ ሥፍራዎን ያጋሩ፣ በአቅራቢያዎ ያሉ የመኪና ማቆሚያዎችን አገኝልዎታለሁ።\n\nለመጀመር ከታች ያለውን ሜኑ ይጠቀሙ።",
+    "language_set": "ቋንቋ ወደ አማርኛ ተቀይሯል። ✅"
+  },
+  "language": {
+    "english": "🇬🇧 English",
+    "amharic": "🇪🇹 አማርኛ",
+    "changed": "ቋንቋ ተቀይሯል። ✅"
+  },
+  "menu": {
+    "find_parking": "🅿️ ማቆሚያ ፈልግ",
+    "my_bookings": "📋 ቦታ ያስያዝኳቸው",
+    "become_host": "🏠 ቦታዎን ያስመዝግቡ",
+    "my_spots": "🏠 የእኔ ቦታዎች",
+    "language": "🌐 ቋንቋ",
+    "help": "ℹ️ እገዛ"
+  },
+  "nearby": {
+    "ask_location": "📍 ከታች ያለውን ቁልፍ ነክተው ሥፍራዎን ያጋሩ፣ በአቅራቢያ ያሉ ማቆሚያዎችን አገኝልዎታለሁ።",
+    "share_location_button": "📍 ሥፍራዬን አጋራ",
+    "searching": "🔎 በአቅራቢያዎ ማቆሚያ እየፈለግሁ ነው...",
+    "none_found": "በ{radius} ኪሜ ውስጥ ነፃ ማቆሚያ አልተገኘም። ቦታዎን ያንቀሳቅሱ ወይም ቆይተው ይሞክሩ።",
+    "results_header": "በአቅራቢያዎ {count} ማቆሚያ(ዎች) ተገኝተዋል:",
+    "results_header_far": "በ{radius} ኪሜ ውስጥ የለም፣ ነገር ግን በጣም ቅርብ የሆኑት እነዚህ ናቸው (በቅርቡ ያለው {distance} ይርቃል):",
+    "spot_line": "{index}. {address} — {price} {currency}/ሰዓት · {distance}{badges}",
+    "open_map": "🗺️ ካርታ ክፈት",
+    "view_spot": "እይ",
+    "book_spot": "#{index} ያስይዙ"
+  },
+  "spot": {
+    "details_title": "🅿️ {address}",
+    "price": "💵 ዋጋ: {price} {currency}/ሰዓት",
+    "distance": "📏 ርቀት: {distance}",
+    "capacity": "🚗 አቅም: {capacity}",
+    "rating": "⭐ ደረጃ: {rating} ({count} ግምገማዎች)",
+    "no_rating": "⭐ ገና ደረጃ የለም",
+    "amenities": "✨ አገልግሎቶች: {list}",
+    "covered": "የተሸፈነ",
+    "guarded": "ጥበቃ ያለው",
+    "ev_charging": "የኤሌክትሪክ ቻርጅ",
+    "amenities_none": "—",
+    "book_now": "📅 ይህን ቦታ ያስይዙ",
+    "show_on_map": "🗺️ በካርታ አሳይ"
+  },
+  "booking": {
+    "choose_start": "መቼ ማቆም ይፈልጋሉ?",
+    "start_now": "▶️ አሁን ጀምር",
+    "start_in_30": "በ30 ደቂቃ",
+    "start_in_60": "በ1 ሰዓት",
+    "choose_duration": "ለምን ያህል ጊዜ?",
+    "duration_hours": "{hours} ሰዓት",
+    "summary_title": "📋 የማስያዣ ማጠቃለያ",
+    "summary_body": "ቦታ: {address}\nጀምር: {start}\nጨርስ: {end}\nቆይታ: {hours} ሰዓት\nጠቅላላ: {total} {currency}",
+    "confirm": "✅ ማስያዣን አረጋግጥ",
+    "confirm_pending_note": "ክፍያ በሚቀጥለው ደረጃ ይታከላል። ለአሁኑ ይህ ቦታውን ብቻ ያስይዛል።",
+    "reserved_title": "✅ ተይዟል!",
+    "reserved_body": "የማረጋገጫ ኮድዎ *{code}* ነው።\n\nቦታ: {address}\nጀምር: {start}\nጨርስ: {end}\nጠቅላላ: {total} {currency}\n\nሲደርሱ ይህን ኮድ ለባለቤቱ ያሳዩ።",
+    "conflict_full": "ይቅርታ፣ ይህ ቦታ ለዚያ ጊዜ ሙሉ በሙሉ ተይዟል። እባክዎ ሌላ ቦታ ወይም ጊዜ ይምረጡ።",
+    "spot_unavailable": "ይህ ቦታ አሁን አይገኝም። እባክዎ ሌላ ይምረጡ።",
+    "cancelled": "ማስያዣ ተሰርዟል።",
+    "none": "እስካሁን ምንም ያስያዙት የለም።",
+    "list_item": "{code} · {address}\n{start} → {end} · {status} · {total} {currency}",
+    "host_notified_title": "🔔 አዲስ ማስያዣ!",
+    "host_notified_body": "{address}\nኮድ: {code}\n{start} → {end}\nአሽከርካሪ: {driver}\nጠቅላላ: {total} {currency}"
+  },
+  "status": {
+    "pending": "በመጠባበቅ ላይ",
+    "reserved": "ተይዟል",
+    "confirmed": "ተረጋግጧል",
+    "active": "በሂደት ላይ",
+    "completed": "ተጠናቋል",
+    "cancelled": "ተሰርዟል",
+    "expired": "ጊዜው አልፏል"
+  },
+  "help": {
+    "text": "{app} በአዲስ አበባ ማቆሚያ ለማግኘትና ለማስያዝ ይረዳዎታል።\n\n• 🅿️ ማቆሚያ ፈልግ — በአቅራቢያ ያሉ ቦታዎችን ለማየት ሥፍራዎን ያጋሩ\n• 📋 ቦታ ያስያዝኳቸው — ማስያዣዎችዎን ይዩ\n• 🏠 ቦታዎን ያስመዝግቡ — ማቆሚያዎን አከራይተው ገቢ ያግኙ\n• 🌐 ቋንቋ — በእንግሊዝኛና በአማርኛ መካከል ይቀያይሩ\n\nእገዛ ይፈልጋሉ? ድጋፍን ያግኙ።"
+  },
+  "host": {
+    "coming_soon": "የባለቤት ምዝገባ በቅርቡ ይመጣል። 🏠"
+  }
+}
