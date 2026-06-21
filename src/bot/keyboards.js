@@ -1,4 +1,5 @@
 import { InlineKeyboard, Keyboard } from 'grammy';
+import { directionsUrl } from '../utils/maps.js';
 
 // Language picker (used at /start and from the menu).
 export function languageKeyboard(t) {
@@ -35,7 +36,11 @@ export function shareLocationKeyboard(t) {
 export function nearbyResultsKeyboard(t, spots, { miniAppUrl } = {}) {
   const kb = new InlineKeyboard();
   spots.forEach((s, i) => {
-    kb.text(t('nearby.book_spot', { index: i + 1 }), `spot:view:${s.id}`).row();
+    kb.text(t('nearby.book_spot', { index: i + 1 }), `spot:view:${s.id}`);
+    if (s.lat != null && s.lng != null) {
+      kb.url(t('common.directions'), directionsUrl(s.lat, s.lng));
+    }
+    kb.row();
   });
   if (miniAppUrl) {
     kb.webApp(t('nearby.open_map'), miniAppUrl);
@@ -44,11 +49,13 @@ export function nearbyResultsKeyboard(t, spots, { miniAppUrl } = {}) {
 }
 
 // Spot detail actions.
-export function spotDetailKeyboard(t, spotId) {
-  return new InlineKeyboard()
-    .text(t('spot.book_now'), `book:start:${spotId}`)
-    .row()
-    .text(t('common.back'), 'nearby:back');
+export function spotDetailKeyboard(t, spot) {
+  const kb = new InlineKeyboard().text(t('spot.book_now'), `book:start:${spot.id}`).row();
+  if (spot.lat != null && spot.lng != null) {
+    kb.url(t('common.directions'), directionsUrl(spot.lat, spot.lng)).row();
+  }
+  kb.text(t('common.back'), 'nearby:back');
+  return kb;
 }
 
 // Start-time choices.
