@@ -55,14 +55,21 @@ async function notifyHost(ctx, spot, booking) {
   }
 }
 
+// Begin the booking flow for a spot: shows the start-time choices. Shared by the
+// `book:start:<id>` callback and the `start=book_<id>` deep link (from the map).
+export async function beginBooking(ctx, spotId) {
+  const spot = await spotsRepo.getById(spotId);
+  if (!spot) return ctx.reply(ctx.t('booking.spot_unavailable'));
+  await ctx.reply(ctx.t('booking.choose_start'), {
+    reply_markup: startTimeKeyboard(ctx.t, spotId),
+  });
+}
+
 export function registerBooking(bot) {
   // Step 1: choose start time.
   bot.callbackQuery(/^book:start:(\d+)$/, async (ctx) => {
-    const spotId = Number(ctx.match[1]);
     await ctx.answerCallbackQuery();
-    await ctx.reply(ctx.t('booking.choose_start'), {
-      reply_markup: startTimeKeyboard(ctx.t, spotId),
-    });
+    await beginBooking(ctx, Number(ctx.match[1]));
   });
 
   // Step 2: chose start offset → choose duration.

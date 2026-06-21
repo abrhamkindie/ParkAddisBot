@@ -1,6 +1,7 @@
 import { config } from '../../config/index.js';
 import { languageKeyboard, mainMenuKeyboard } from '../keyboards.js';
 import { handleCheckin } from './checkin.js';
+import { beginBooking } from './booking.js';
 
 // /start — if the user has no explicit language yet, ask; otherwise greet.
 export function registerStart(bot) {
@@ -8,6 +9,10 @@ export function registerStart(bot) {
     const payload = typeof ctx.match === 'string' ? ctx.match.trim() : '';
     if (payload.startsWith('checkin_')) {
       return handleCheckin(ctx, payload.slice('checkin_'.length));
+    }
+    if (payload.startsWith('book_')) {
+      const spotId = Number(payload.slice('book_'.length));
+      if (Number.isFinite(spotId)) return beginBooking(ctx, spotId);
     }
     const t = ctx.t;
     // First-time-ish: always offer language on /start, it's cheap and clear.
