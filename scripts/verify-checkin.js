@@ -9,6 +9,12 @@ function section(name) { console.log('\n[' + name + ']'); }
 function ok(msg) { console.log('  ✓ ' + msg); }
 
 async function main() {
+  // Idempotency: remove rows left by previous runs of this script.
+  const _db = await import('../src/db/index.js');
+  await _db.query(
+    "DELETE FROM bookings WHERE driver_id IN (SELECT id FROM users WHERE telegram_id IN (999000111, 999000222))"
+  );
+
   section('utils');
   const tok = generateCheckinToken();
   assert.match(tok, /^[A-Za-z0-9_-]{20,}$/, 'token is url-safe and long enough');
@@ -35,6 +41,59 @@ async function main() {
   const { booking } = await reserve({ driverId: driver.id, spotId: near[0].id, start: new Date(), hours: 1 });
   assert.match(booking.checkin_token || '', /^[A-Za-z0-9_-]{20,}$/, 'reserve() returns a checkin_token');
   ok('reserve() generates and persists a checkin_token');
+
+  section('checkinService');
+  const { checkIn, complete, CheckinError } = await import('../src/services/checkinService.js');
+
+  const ownerId = (await spots.getById(near[0].id)).owner_id;
+  const owner = await usersRepo.getById(ownerId);
+
+  // Non-owner cannot check in.
+  await assert.rejects(
+    () => checkIn({ scannerTelegramId: 123456789, scannerRole: 'driver', token: booking.checkin_token }),
+    (e) => e instanceof CheckinError && e.code === 'NOT_OWNER',
+    'non-owner is rejected'
+  );
+  ok('NOT_OWNER enforced');
+
+  // Owner checks in successfully.
+  const res = await checkIn({ scannerTelegramId: owner.telegram_id, scannerRole: owner.role, token: booking.checkin_token });
+  assert.equal(res.booking.status, 'active', 'status becomes active');
+  assert.ok(res.booking.checked_in_at, 'checked_in_at is set');
+  ok('owner check-in transitions to active');
+
+  // Second check-in is rejected.
+  await assert.rejects(
+    () => checkIn({ scannerTelegramId: owner.telegram_id, scannerRole: owner.role, token: booking.checkin_token }),
+    (e) => e instanceof CheckinError && e.code === 'ALREADY_CHECKED_IN',
+    'already-checked-in rejected'
+  );
+  ok('ALREADY_CHECKED_IN enforced');
+
+  // Unknown token.
+  await assert.rejects(
+    () => checkIn({ scannerTelegramId: owner.telegram_id, scannerRole: owner.role, token: 'nope-not-real' }),
+    (e) => e instanceof CheckinError && e.code === 'NOT_FOUND',
+    'unknown token rejected'
+  );
+  ok('NOT_FOUND enforced');
+
+  // Expired booking (end_time in the past).
+  const expDriver = await usersRepo.upsertUser({ telegramId: 999000222, name: 'Exp Driver' });
+  const past = new Date(Date.now() - 5 * 3600 * 1000);
+  const { booking: expB } = await reserve({ driverId: expDriver.id, spotId: near[0].id, start: past, hours: 1 });
+  await assert.rejects(
+    () => checkIn({ scannerTelegramId: owner.telegram_id, scannerRole: owner.role, token: expB.checkin_token }),
+    (e) => e instanceof CheckinError && e.code === 'EXPIRED',
+    'expired rejected'
+  );
+  ok('EXPIRED enforced');
+
+  // Complete the active booking.
+  const done = await complete({ bookingId: res.booking.id, scannerTelegramId: owner.telegram_id, scannerRole: owner.role });
+  assert.equal(done.status, 'completed', 'status becomes completed');
+  assert.ok(done.checked_out_at, 'checked_out_at is set');
+  ok('complete transitions to completed');
 
   console.log('\nALL CHECK-IN CHECKS PASSED ✅\n');
   const db = await import('../src/db/index.js');
