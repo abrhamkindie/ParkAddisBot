@@ -36,6 +36,7 @@
     "searching": "🔎 Searching for parking near you...",
     "none_found": "No available parking found within {radius} km. Try moving the search area or check back later.",
     "results_header": "Found {count} spot(s) near you:",
+    "map_cta": "🅿️ Found {count} spot(s) near you — tap to see them on the map:",
     "results_header_far": "No spots within {radius} km, but here are the closest ones (nearest is {distance} away):",
     "spot_line": "{index}. {address} — {price} {currency}/hr · {distance}{badges}",
     "open_map": "🗺️ Open map view",

@@ -1,3 +1,4 @@
+import { InlineKeyboard } from 'grammy';
 import { config } from '../../config/index.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
 import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard } from '../keyboards.js';
@@ -5,14 +6,35 @@ import { spotLine, spotDetail } from '../views/spot.js';
 import { allTranslations } from '../../i18n/index.js';
 import { logger } from '../../utils/logger.js';
 
-// Build a Mini App URL with the user's coords (used in step 5). Returns null
-// unless a BOT_USERNAME + PUBLIC_URL https origin is configured.
+// Build a Mini App map URL with the user's coords. Returns null unless a
+// PUBLIC_URL https origin is configured (Telegram requires https). Carries the
+// bot username so the map's "Book" button can deep-link back into the chat flow.
 function miniAppUrl(lat, lng) {
-  if (!config.publicUrl.startsWith('https://')) return null; // Telegram requires https
+  if (!config.publicUrl.startsWith('https://')) return null;
   const u = new URL('/miniapp/', config.publicUrl);
   u.searchParams.set('lat', lat);
   u.searchParams.set('lng', lng);
+  u.searchParams.set('bot', config.botUsername);
   return u.toString();
+}
+
+// Map-first results: when a Mini App URL is available, lead with a one-tap
+// "view on map" button, then show the list as a fallback below (no duplicate map
+// button on the list). Without https, just the list.
+async function presentResults(ctx, lat, lng, spots, headerText) {
+  const t = ctx.t;
+  const mapUrl = miniAppUrl(lat, lng);
+
+  if (mapUrl) {
+    await ctx.reply(t('nearby.map_cta', { count: spots.length }), {
+      reply_markup: new InlineKeyboard().webApp(t('nearby.open_map'), mapUrl),
+    });
+  }
+
+  const body = spots.map((s, i) => spotLine(t, s, i)).join('\n');
+  await ctx.reply(`${headerText}\n\n${body}`, {
+    reply_markup: nearbyResultsKeyboard(t, spots, {}),
+  });
 }
 
 async function runSearch(ctx, lat, lng) {
@@ -48,18 +70,10 @@ async function runSearch(ctx, lat, lng) {
       radius: (radiusM / 1000).toFixed(1),
       distance,
     });
-    const body = nearest.map((s, i) => spotLine(t, s, i)).join('\n');
-    return ctx.reply(`${header}\n\n${body}`, {
-      reply_markup: nearbyResultsKeyboard(t, nearest, { miniAppUrl: miniAppUrl(lat, lng) }),
-    });
+    return presentResults(ctx, lat, lng, nearest, header);
   }
 
-  const header = t('nearby.results_header', { count: spots.length });
-  const body = spots.map((s, i) => spotLine(t, s, i)).join('\n');
-
-  await ctx.reply(`${header}\n\n${body}`, {
-    reply_markup: nearbyResultsKeyboard(t, spots, { miniAppUrl: miniAppUrl(lat, lng) }),
-  });
+  return presentResults(ctx, lat, lng, spots, t('nearby.results_header', { count: spots.length }));
 }
 
 export function registerNearby(bot) {

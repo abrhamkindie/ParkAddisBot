@@ -36,6 +36,7 @@
     "searching": "🔎 በአቅራቢያዎ ማቆሚያ እየፈለግሁ ነው...",
     "none_found": "በ{radius} ኪሜ ውስጥ ነፃ ማቆሚያ አልተገኘም። ቦታዎን ያንቀሳቅሱ ወይም ቆይተው ይሞክሩ።",
     "results_header": "በአቅራቢያዎ {count} ማቆሚያ(ዎች) ተገኝተዋል:",
+    "map_cta": "🅿️ በአቅራቢያዎ {count} ማቆሚያ(ዎች) ተገኝተዋል — በካርታ ላይ ለማየት ይንኩ:",
     "results_header_far": "በ{radius} ኪሜ ውስጥ የለም፣ ነገር ግን በጣም ቅርብ የሆኑት እነዚህ ናቸው (በቅርቡ ያለው {distance} ይርቃል):",
     "spot_line": "{index}. {address} — {price} {currency}/ሰዓት · {distance}{badges}",
     "open_map": "🗺️ ካርታ ክፈት",
