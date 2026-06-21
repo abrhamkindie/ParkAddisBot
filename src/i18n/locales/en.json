@@ -73,6 +73,8 @@
     "spot_unavailable": "This spot is no longer available. Please choose another.",
     "cancelled": "Booking cancelled.",
     "none": "You have no bookings yet.",
+    "qr_caption": "📲 Show this QR to the host at the entrance.\nSpot: {address}\n{start} → {end}\nTotal: {total} {currency}\nCode: *{code}*",
+    "show_qr_button": "📲 Show QR",
     "list_item": "{code} · {address}\n{start} → {end} · {status} · {total} {currency}",
     "host_notified_title": "🔔 New reservation!",
     "host_notified_body": "{address}\nCode: {code}\n{start} → {end}\nDriver: {driver}\nTotal: {total} {currency}"
@@ -91,5 +93,17 @@
   },
   "host": {
     "coming_soon": "Host onboarding is coming soon. 🏠"
+  },
+  "checkin": {
+    "success_owner": "✅ Checked in!\nDriver: {driver}\n{address}\n{start} → {end}\nTotal: {total} {currency}",
+    "driver_notified": "✅ You've been checked in at {address}. Enjoy your parking!",
+    "complete_button": "✅ Mark complete",
+    "completed_owner": "✅ Booking completed. Thank you!",
+    "not_completable": "This booking can't be completed (already closed or not checked in).",
+    "err_not_found": "This code is invalid or has expired.",
+    "err_not_owner": "Only the spot's owner can check this booking in.",
+    "err_already": "This booking is already checked in.",
+    "err_invalid_state": "This booking is cancelled or already completed.",
+    "err_expired": "This booking has expired."
   }
 }

@@ -73,6 +73,8 @@
     "spot_unavailable": "ይህ ቦታ አሁን አይገኝም። እባክዎ ሌላ ይምረጡ።",
     "cancelled": "ማስያዣ ተሰርዟል።",
     "none": "እስካሁን ምንም ያስያዙት የለም።",
+    "qr_caption": "📲 ይህን QR በመግቢያው ላይ ለአስተናጋጁ ያሳዩ።\nቦታ: {address}\n{start} → {end}\nጠቅላላ: {total} {currency}\nኮድ: *{code}*",
+    "show_qr_button": "📲 QR አሳይ",
     "list_item": "{code} · {address}\n{start} → {end} · {status} · {total} {currency}",
     "host_notified_title": "🔔 አዲስ ማስያዣ!",
     "host_notified_body": "{address}\nኮድ: {code}\n{start} → {end}\nአሽከርካሪ: {driver}\nጠቅላላ: {total} {currency}"
@@ -88,6 +90,18 @@
   },
   "help": {
     "text": "{app} በአዲስ አበባ ማቆሚያ ለማግኘትና ለማስያዝ ይረዳዎታል።\n\n• 🅿️ ማቆሚያ ፈልግ — በአቅራቢያ ያሉ ቦታዎችን ለማየት ሥፍራዎን ያጋሩ\n• 📋 ቦታ ያስያዝኳቸው — ማስያዣዎችዎን ይዩ\n• 🏠 ቦታዎን ያስመዝግቡ — ማቆሚያዎን አከራይተው ገቢ ያግኙ\n• 🌐 ቋንቋ — በእንግሊዝኛና በአማርኛ መካከል ይቀያይሩ\n\nእገዛ ይፈልጋሉ? ድጋፍን ያግኙ።"
+  },
+  "checkin": {
+    "success_owner": "✅ ገብቷል!\nሹፌር: {driver}\n{address}\n{start} → {end}\nጠቅላላ: {total} {currency}",
+    "driver_notified": "✅ በ{address} ገብተዋል። መልካም ማቆሚያ!",
+    "complete_button": "✅ ጨርስ",
+    "completed_owner": "✅ ቦታ ማስያዙ ተጠናቋል። እናመሰግናለን!",
+    "not_completable": "ይህ ማስያዝ ሊጠናቀቅ አይችልም (አስቀድሞ ተዘግቷል ወይም አልገባም)።",
+    "err_not_found": "ይህ ኮድ ልክ ያልሆነ ወይም ጊዜው ያለፈበት ነው።",
+    "err_not_owner": "ይህን ማስያዝ ማስገባት የሚችለው የቦታው ባለቤት ብቻ ነው።",
+    "err_already": "ይህ ማስያዝ አስቀድሞ ገብቷል።",
+    "err_invalid_state": "ይህ ማስያዝ ተሰርዟል ወይም አስቀድሞ ተጠናቋል።",
+    "err_expired": "የዚህ ማስያዝ ጊዜ አልፏል።"
   },
   "host": {
     "coming_soon": "የባለቤት ምዝገባ በቅርቡ ይመጣል። 🏠"
