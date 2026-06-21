@@ -8,6 +8,7 @@ import { registerNearby } from './handlers/nearby.js';
 import { registerBooking } from './handlers/booking.js';
 import { registerBookingsList } from './handlers/bookingsList.js';
 import { registerHost } from './handlers/host.js';
+import { registerCheckin } from './handlers/checkin.js';
 
 export function createBot() {
   assertBotConfig();
@@ -40,6 +41,7 @@ export function createBot() {
   registerBooking(bot);
   registerBookingsList(bot);
   registerHost(bot); // also handles help + cancel hears()
+  registerCheckin(bot);
 
   // Global error boundary so one bad update can't crash the long-poller.
   bot.catch((err) => {
