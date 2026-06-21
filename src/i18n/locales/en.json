@@ -2,6 +2,7 @@
   "common": {
     "app_name": "ParkAddis",
     "back": "« Back",
+    "directions": "🧭 Directions",
     "cancel": "Cancel",
     "yes": "Yes",
     "no": "No",

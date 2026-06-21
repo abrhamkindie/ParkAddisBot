@@ -84,8 +84,13 @@ export function registerNearby(bot) {
     if (!spot) return ctx.reply(ctx.t('booking.spot_unavailable'));
 
     await ctx.reply(spotDetail(ctx.t, spot), {
-      reply_markup: spotDetailKeyboard(ctx.t, spotId),
+      reply_markup: spotDetailKeyboard(ctx.t, spot),
     });
+
+    // Native map card the driver can tap to open maps.
+    if (spot.lat != null && spot.lng != null) {
+      await ctx.replyWithLocation(spot.lat, spot.lng);
+    }
   });
 
   // "Back" from a spot detail — just acknowledge; the result list is still above.
