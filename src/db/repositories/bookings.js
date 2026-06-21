@@ -46,3 +46,59 @@ export async function updateStatus(id, status, extra = {}) {
   );
   return rows[0] || null;
 }
+
+// Shared SELECT that joins a booking with its spot, driver, and owner.
+const PARTIES_SELECT = `
+  SELECT b.*, s.address, s.owner_id,
+         d.name        AS driver_name,
+         d.telegram_id AS driver_telegram_id,
+         d.language_pref AS driver_language_pref,
+         o.telegram_id AS owner_telegram_id,
+         o.language_pref AS owner_language_pref,
+         o.role        AS owner_role
+  FROM bookings b
+  JOIN spots s ON s.id = b.spot_id
+  JOIN users d ON d.id = b.driver_id
+  JOIN users o ON o.id = s.owner_id`;
+
+// Store the QR secret on a booking.
+export async function attachCheckinToken(id, token) {
+  const { rows } = await query(
+    `UPDATE bookings SET checkin_token = $2 WHERE id = $1 RETURNING *`,
+    [id, token]
+  );
+  return rows[0] || null;
+}
+
+// Booking (with parties) by its QR token, or null.
+export async function getByCheckinToken(token) {
+  const { rows } = await query(`${PARTIES_SELECT} WHERE b.checkin_token = $1`, [token]);
+  return rows[0] || null;
+}
+
+// Booking (with parties) by id, or null.
+export async function getByIdWithParties(id) {
+  const { rows } = await query(`${PARTIES_SELECT} WHERE b.id = $1`, [id]);
+  return rows[0] || null;
+}
+
+// Atomic check-in: only succeeds from a pre-check-in state. Returns the updated
+// row, or null if it wasn't in a check-in-able state (lost race / already done).
+export async function markCheckedIn(id) {
+  const { rows } = await query(
+    `UPDATE bookings SET status = 'active', checked_in_at = now()
+     WHERE id = $1 AND status IN ('reserved','confirmed') RETURNING *`,
+    [id]
+  );
+  return rows[0] || null;
+}
+
+// Atomic completion: only from 'active'. Returns updated row or null.
+export async function markCompleted(id) {
+  const { rows } = await query(
+    `UPDATE bookings SET status = 'completed', checked_out_at = now()
+     WHERE id = $1 AND status = 'active' RETURNING *`,
+    [id]
+  );
+  return rows[0] || null;
+}
