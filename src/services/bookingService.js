@@ -1,7 +1,7 @@
 import * as bookingsRepo from '../db/repositories/bookings.js';
 import * as spotsRepo from '../db/repositories/spots.js';
 import { calcTotal } from './pricing.js';
-import { generateConfirmationCode } from '../utils/code.js';
+import { generateConfirmationCode, generateCheckinToken } from '../utils/code.js';
 
 export class BookingError extends Error {
   constructor(code) {
@@ -39,6 +39,9 @@ export async function reserve({ driverId, spotId, start, hours }) {
     if (code) throw new BookingError(code);
     throw err;
   }
+
+  const checkinToken = generateCheckinToken();
+  await bookingsRepo.attachCheckinToken(bookingId, checkinToken);
 
   const booking = await bookingsRepo.getById(bookingId);
   return { booking, spot };
