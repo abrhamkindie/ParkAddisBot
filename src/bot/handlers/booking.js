@@ -8,6 +8,9 @@ import {
   confirmBookingKeyboard,
 } from '../keyboards.js';
 import { formatDateTime, formatMoney, currency } from '../../utils/format.js';
+import { InputFile } from 'grammy';
+import { checkinQrPng } from '../../utils/qr.js';
+import { checkinLink } from '../../utils/deeplink.js';
 import { logger } from '../../utils/logger.js';
 
 // Translate a BookingError code to a user-facing message.
@@ -133,6 +136,27 @@ export function registerBooking(bot) {
         });
 
       await ctx.editMessageText(text, { parse_mode: 'Markdown' });
+
+      // Send the scannable QR for entrance check-in (best-effort).
+      try {
+        if (booking.checkin_token) {
+          const png = await checkinQrPng(checkinLink(booking.checkin_token));
+          await ctx.replyWithPhoto(new InputFile(png, 'checkin.png'), {
+            caption: ctx.t('booking.qr_caption', {
+              address: spot.address || '—',
+              start: formatDateTime(booking.start_time),
+              end: formatDateTime(booking.end_time),
+              total: formatMoney(booking.total_price),
+              currency,
+              code: booking.confirmation_code,
+            }),
+            parse_mode: 'Markdown',
+          });
+        }
+      } catch (err) {
+        logger.warn('qr send failed', { error: err.message });
+      }
+
       await notifyHost(ctx, spot, booking);
     } catch (err) {
       if (err instanceof BookingError) {
