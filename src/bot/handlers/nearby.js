@@ -109,10 +109,17 @@ export function registerNearby(bot) {
     await askForLocation(ctx);
   });
 
-  // Any shared location (live or static) triggers a search.
+  // Any shared location (live or static) triggers a search. Final safety net so a
+  // failure deep in the search/render path can never leave the user staring at
+  // "Searching…" with no reply.
   bot.on('message:location', async (ctx) => {
     const { latitude, longitude } = ctx.msg.location;
-    await runSearch(ctx, latitude, longitude);
+    try {
+      await runSearch(ctx, latitude, longitude);
+    } catch (err) {
+      logger.error('runSearch failed', { error: err.message });
+      await ctx.reply(ctx.t('common.error_generic')).catch(() => {});
+    }
   });
 
   // Tap a spot in the result list → show details.

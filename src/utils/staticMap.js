@@ -8,8 +8,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
-const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+// Tile source is overridable (MAP_TILE_URL) so a busier deployment can point at a
+// provider with a proper usage allowance instead of the public OSM servers.
+const TILE_URL = process.env.MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ICON_DIR = join(tmpdir(), 'parkaddis-markers');
+
+// Per-tile fetch timeout and an overall render budget. Without these a slow or
+// rate-limited tile server would hang the request forever (got has no default
+// timeout), and a hang — unlike a throw — would slip past the caller's try/catch.
+const TILE_TIMEOUT_MS = 5000;
+const RENDER_BUDGET_MS = 12000;
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 // Pin geometry (a classic teardrop). Anchor is the bottom tip.
 const PIN_W = 30;
@@ -60,7 +76,14 @@ export async function renderNearbyMap({ lat, lng, spots, width = 640, height = 4
   const pinnable = spots.filter((s) => s.lat != null && s.lng != null);
   const { me, pins } = await prepareIcons(pinnable.length);
 
-  const map = new StaticMaps({ width, height, tileUrl: TILE_URL, paddingX: 40, paddingY: 60 });
+  const map = new StaticMaps({
+    width,
+    height,
+    tileUrl: TILE_URL,
+    paddingX: 40,
+    paddingY: 60,
+    tileRequestTimeout: TILE_TIMEOUT_MS,
+  });
 
   map.addMarker({ coord: [Number(lng), Number(lat)], img: me, width: 22, height: 22, offsetX: 11, offsetY: 11 });
   pinnable.forEach((s, i) => {
@@ -74,6 +97,8 @@ export async function renderNearbyMap({ lat, lng, spots, width = 640, height = 4
     });
   });
 
-  await map.render();
+  // Hard ceiling on the whole render so a stalled tile fetch can never hang the
+  // chat — it surfaces as a rejection the caller catches and falls back from.
+  await withTimeout(map.render(), RENDER_BUDGET_MS, 'map render');
   return map.image.buffer('image/png');
 }
