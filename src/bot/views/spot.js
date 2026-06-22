@@ -22,40 +22,11 @@ export function spotLine(t, spot, index) {
   });
 }
 
-// Short title for a native venue pin, e.g. "45 ETB/hr · 🚶 6 min · ⭐ 4.6".
-export function pinTitle(t, spot) {
-  const minutes = walkMinutes(spot.distance_m);
-  const rating =
-    spot.rating_count > 0
-      ? t('nearby.pin_rating', { rating: Number(spot.rating_avg).toFixed(1) })
-      : '';
-  return t('nearby.pin_title', {
-    price: formatMoney(spot.price_per_hour),
-    currency,
-    minutes: minutes == null ? '?' : minutes,
-    rating,
-  });
-}
-
-// Pure presenter for a nearby-search result: given the spots and context, returns
-// a plain plan the handler can send — a lead message (header + optional map
-// button + "N more" note) and one venue pin per spot (capped at maxPins). No bot,
-// DB, or i18n side effects beyond the passed-in translator, so it's unit-testable.
-export function buildNearbyPresentation(t, spots, { mapUrl = null, maxPins = 5, headerText } = {}) {
-  const pinnable = spots.filter((s) => s.lat != null && s.lng != null);
-  const pins = pinnable.slice(0, maxPins).map((s) => ({
-    spotId: Number(s.id),
-    lat: Number(s.lat),
-    lng: Number(s.lng),
-    title: pinTitle(t, s),
-    address: `${s.address || '—'}${amenityBadges(s)}`,
-  }));
-
-  const moreCount = spots.length - pins.length;
-  let text = headerText;
-  if (moreCount > 0) text += `\n\n${t('nearby.pins_more', { count: moreCount })}`;
-
-  return { lead: { text, mapUrl, moreCount }, pins };
+// Caption for the nearby-map photo: a header followed by the numbered list of
+// spots, the numbers matching the pins drawn on the map image. Pure/testable.
+export function buildMapCaption(t, spots, { headerText } = {}) {
+  const body = spots.map((s, i) => spotLine(t, s, i)).join('\n');
+  return `${headerText}\n\n${body}`;
 }
 
 // Full detail block for a single spot.

@@ -1,13 +1,9 @@
-import { InlineKeyboard } from 'grammy';
+import { InputFile } from 'grammy';
 import { config } from '../../config/index.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
-import {
-  shareLocationKeyboard,
-  nearbyResultsKeyboard,
-  spotDetailKeyboard,
-  venuePinKeyboard,
-} from '../keyboards.js';
-import { spotLine, spotDetail, buildNearbyPresentation } from '../views/spot.js';
+import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard } from '../keyboards.js';
+import { spotLine, spotDetail, buildMapCaption } from '../views/spot.js';
+import { renderNearbyMap } from '../../utils/staticMap.js';
 import { allTranslations } from '../../i18n/index.js';
 import { logger } from '../../utils/logger.js';
 
@@ -23,48 +19,35 @@ function miniAppUrl(lat, lng) {
   return u.toString();
 }
 
-// Fallback when native venue pins can't be sent: the classic text list (with a
-// map button when https is available).
+// Build the inline keyboard that sits under the map photo (and the list
+// fallback): a per-spot Book + Directions row, plus the interactive-map button.
+function resultsKeyboard(t, lat, lng, spots) {
+  return nearbyResultsKeyboard(t, spots, { miniAppUrl: miniAppUrl(lat, lng) });
+}
+
+// Fallback when the map image can't be rendered (e.g. tiles unreachable): the
+// classic numbered text list with the same Book/Directions/map buttons.
 async function presentList(ctx, lat, lng, spots, headerText) {
-  const t = ctx.t;
-  const mapUrl = miniAppUrl(lat, lng);
-  if (mapUrl) {
-    await ctx.reply(t('nearby.map_cta', { count: spots.length }), {
-      reply_markup: new InlineKeyboard().webApp(t('nearby.open_map'), mapUrl),
-    });
-  }
-  const body = spots.map((s, i) => spotLine(t, s, i)).join('\n');
+  const body = spots.map((s, i) => spotLine(ctx.t, s, i)).join('\n');
   await ctx.reply(`${headerText}\n\n${body}`, {
-    reply_markup: nearbyResultsKeyboard(t, spots, {}),
+    reply_markup: resultsKeyboard(ctx.t, lat, lng, spots),
   });
 }
 
-// Map-first results: immediately drop a native map pin per nearby spot in the
-// chat (each with Book/Directions/Details), led by a header that also carries the
-// one-tap interactive-map button. Pins render even without the https tunnel, so
-// if anything goes wrong we degrade to the plain text list rather than fail.
+// Map-first results: render ONE map image with every nearby spot as a numbered
+// pin (plus the driver's location) and send it as a single photo — the
+// Google-Maps-style overview. The numbered caption + Book/Directions buttons
+// line up with the pins. If rendering fails we degrade to the text list.
 async function presentResults(ctx, lat, lng, spots, headerText) {
   const t = ctx.t;
-  const mapUrl = miniAppUrl(lat, lng);
-  const plan = buildNearbyPresentation(t, spots, {
-    mapUrl,
-    maxPins: config.search.maxInlinePins,
-    headerText,
-  });
-
   try {
-    await ctx.reply(plan.lead.text, {
-      reply_markup: plan.lead.mapUrl
-        ? new InlineKeyboard().webApp(t('nearby.open_map'), plan.lead.mapUrl)
-        : undefined,
+    const png = await renderNearbyMap({ lat, lng, spots });
+    await ctx.replyWithPhoto(new InputFile(png, 'nearby.png'), {
+      caption: buildMapCaption(t, spots, { headerText }),
+      reply_markup: resultsKeyboard(t, lat, lng, spots),
     });
-    for (const pin of plan.pins) {
-      await ctx.replyWithVenue(pin.lat, pin.lng, pin.title, pin.address, {
-        reply_markup: venuePinKeyboard(t, { id: pin.spotId, lat: pin.lat, lng: pin.lng }),
-      });
-    }
   } catch (err) {
-    logger.warn('venue pins failed; falling back to list', { error: err.message });
+    logger.warn('map render failed; falling back to list', { error: err.message });
     await presentList(ctx, lat, lng, spots, headerText);
   }
 }
@@ -98,7 +81,7 @@ async function runSearch(ctx, lat, lng) {
       return ctx.reply(t('nearby.none_found', { radius: (radiusM / 1000).toFixed(1) }));
     }
     const distance = `${(nearest[0].distance_m / 1000).toFixed(1)} km`;
-    const header = t('nearby.pins_header_far', {
+    const header = t('nearby.map_header_far', {
       radius: (radiusM / 1000).toFixed(1),
       count: nearest.length,
       distance,
@@ -106,7 +89,7 @@ async function runSearch(ctx, lat, lng) {
     return presentResults(ctx, lat, lng, nearest, header);
   }
 
-  return presentResults(ctx, lat, lng, spots, t('nearby.pins_header', { count: spots.length }));
+  return presentResults(ctx, lat, lng, spots, t('nearby.map_header', { count: spots.length }));
 }
 
 // Prompt the driver to share their location (the entry point to a search).

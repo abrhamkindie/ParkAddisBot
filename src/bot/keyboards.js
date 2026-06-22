@@ -13,16 +13,6 @@ export function welcomeKeyboard(t) {
   return new InlineKeyboard().text(t('start.find_parking_cta'), 'nearby:find');
 }
 
-// Actions under a single native venue pin: book, directions, full details.
-export function venuePinKeyboard(t, spot) {
-  const kb = new InlineKeyboard().text(t('spot.book_now'), `book:start:${spot.id}`);
-  if (spot.lat != null && spot.lng != null) {
-    kb.url(t('common.directions'), directionsUrl(spot.lat, spot.lng));
-  }
-  kb.text(t('nearby.details_button'), `spot:view:${spot.id}`);
-  return kb;
-}
-
 // Main reply (persistent) menu shown to drivers.
 export function mainMenuKeyboard(t) {
   return new Keyboard()

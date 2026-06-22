@@ -14,12 +14,16 @@ cards, friendlier fallbacks, and light booking navigation.
 
 ## Decisions (from brainstorming)
 
-- **Auto native pins + map button** (chosen approach). Telegram cannot
-  auto-open a Mini App, so the immediate in-chat map is rendered as native
-  Telegram **venue** pins (one per spot), which also work without the https
-  tunnel. The Mini App stays behind a one-tap **🗺️ Open map view** button.
-- **Pin cap = 5** (`MAX_INLINE_PINS`, configurable). One message per pin, so a
-  cap avoids flooding; the map button covers the full set when there are more.
+- **Single map image with all pins** (revised approach). Like Google Maps search
+  results: one map showing every nearby spot at once, rather than a stack of
+  individual pin messages. Telegram's native location/venue message only shows
+  ONE pin, so the multi-pin map is rendered server-side as a **static PNG** (all
+  spots numbered + the driver's location) and sent as a single photo in chat.
+- **Free OSM tiles, no API key** — rendered with `staticmaps` (composes the same
+  OpenStreetMap tiles the Mini App uses) + `sharp` for the numbered pin icons.
+- The interactive **Mini App** map stays behind a one-tap **🗺️ Open interactive
+  map** button under the photo; the numbered caption + per-spot Book/Directions
+  buttons line up with the pins. Falls back to the text list if rendering fails.
 - Show **all four** friendliness areas: first-time flow, clearer spots,
   robustness, light booking nav.
 
@@ -38,36 +42,30 @@ AND is_available=true`, ordered by distance. No data-layer change needed.
   brand-new user from a returning one. (On `INSERT`, `xmax = 0`; on `UPDATE` it
   is non-zero.)
 
+### `src/utils/staticMap.js` (new)
+- `renderNearbyMap({ lat, lng, spots })` → PNG `Buffer`. Plots every spot with a
+  numbered red teardrop pin (order = `spots`, 1-based) and a blue "you are here"
+  dot, auto-fitting all points. Pin/dot icons are tiny SVGs rasterised once with
+  `sharp` and cached under the OS temp dir. Throws if tiles/render fail so callers
+  can fall back to the text list.
+
 ### `src/bot/views/spot.js`
-- New **pure** `buildNearbyPresentation(t, spots, { mapUrl, maxPins })` returning
-  a plain plan object:
-  ```
-  {
-    lead: { text, mapUrl|null, extraCount },   // header msg + optional map button
-    pins: [{ lat, lng, title, address, spotId }],  // up to maxPins, nearest first
-  }
-  ```
-  - `title` = `"{price} {currency}/hr · {walk}{rating}"` (rating appended only
-    when `rating_count > 0`).
-  - `address` = spot address + amenity badges (reuses `amenityBadges`).
-  - Pure + deterministic → unit-testable without a bot/DB.
+- New **pure** `buildMapCaption(t, spots, { headerText })` → header + numbered
+  list (`spotLine` per spot) whose numbers match the map pins. Unit-testable.
 - `spotDetail` gains a `✅ Available now` line and a walk-time line.
 
 ### `src/bot/keyboards.js`
-- `venuePinKeyboard(t, spot)` → inline `[📅 Book] [🧭 Directions] [ℹ️ Details]`
-  per pin (`book:start:<id>`, directions url, `spot:view:<id>`).
 - `welcomeKeyboard(t)` → inline `[🅿️ Find parking]` (`nearby:find`) for the
   welcome message.
 - Booking keyboards gain light **« Back** steps: duration → start-time
-  (`book:start:<id>`), summary → duration (`book:start_at:<id>:<offset>`).
+  (`book:to_start:<id>`), summary → duration (`book:start_at:<id>:<offset>`).
 
 ### `src/bot/handlers/nearby.js`
-- `presentResults` rewritten to use `buildNearbyPresentation`:
-  1. Send the **lead** message (header + optional `🗺️ Open map view` webApp
-     button; "+N more on the map" note when `spots.length > maxPins`).
-  2. Send a **venue pin per spot** (`replyWithVenue`) with `venuePinKeyboard`.
-  - Wrapped in try/catch: if venue sends fail, fall back to the existing text
-    list (`nearbyResultsKeyboard`) so results are never lost.
+- `presentResults` renders the static map and sends ONE photo
+  (`replyWithPhoto`) with the numbered caption and a `nearbyResultsKeyboard`
+  (per-spot Book + Directions, plus the `🗺️ Open interactive map` web-app button
+  when https is configured). Wrapped in try/catch → falls back to the text list
+  (`presentList`) if rendering fails, so results are never lost.
 - New callback `nearby:find` → same as the "Find parking" menu tap (asks for
   location). Lets the welcome button work.
 
@@ -77,24 +75,23 @@ AND is_available=true`, ordered by distance. No data-layer change needed.
   alongside the persistent reply menu.
 
 ### i18n — `en.json`, `am.json`
-New keys: `nearby.pins_header` ("🅿️ Found {count} available spot(s) near you.
-Tap a pin to book or get directions 👇"), `nearby.pins_more`
-("➕ {count} more — open the map to see them all"), `spot.walk_time`
-("🚶 {walk} away"), `spot.available_now` ("✅ Available now"),
-`spot.details_button` ("ℹ️ Details"), `start.find_parking_cta`
-("🅿️ Find parking near me"), `common.back` already exists.
+New keys: `nearby.map_header` ("🅿️ Found {count} available spot(s) near you.
+Numbers below match the map 👇"), `nearby.map_header_far` (the "nearest" variant),
+`spot.walk_time`, `spot.available_now`, `start.welcome_back`,
+`start.find_parking_cta`, `start.menu_ready`. `nearby.open_map` reworded to
+"Open interactive map". `common.back` already exists.
 
-### Config — `src/config/index.js`, `.env.example`
-- `search.maxInlinePins = int(MAX_INLINE_PINS, 5)`.
+### Dependencies
+- `staticmaps` (OSM static map composition) + `sharp` (icon rasterisation).
 
 ## Testing (existing `scripts/verify-*.js` style, run via `node`)
-- `scripts/verify-maps.js`: extend with `walkTime` cases and
-  `buildNearbyPresentation` shape assertions (lead text, pin count capped at
-  `maxPins`, pin title/address content, `extraCount`). Pure, no DB.
-- `scripts/verify-core.js`: assert `upsertUser` exposes `is_new` (guarded to
-  skip cleanly if no DB).
+- `scripts/verify-maps.js`: `walkMinutes` cases, `buildMapCaption` numbering, and
+  `nearbyResultsKeyboard`/`welcomeKeyboard` wiring. Pure, no DB.
+- `scripts/verify-staticmap.js`: render a 3-pin map and assert a PNG buffer;
+  skips cleanly if OSM tiles are unreachable.
+- DB check: `upsertUser` exposes `is_new` (true on insert, false on update).
 - Bot load test: `createBot()` with a stub token still wires without throwing.
 
 ## Out of scope
-Server-rendered static map image, marker clustering, Mini App initData auth,
-payments, host onboarding, live-location tracking.
+Marker clustering, Mini App initData auth, payments, host onboarding,
+live-location tracking.
