@@ -15,6 +15,15 @@ function setStatus(msg) {
   else { statusEl.style.display = 'none'; }
 }
 
+// Never leave a blank "Loading map…" screen on a script error — surface the real
+// reason so it's debuggable on the phone instead of a silent white page.
+window.addEventListener('error', (e) => {
+  setStatus('Map error: ' + (e.message || e.error || 'failed to load'));
+});
+if (typeof L === 'undefined') {
+  setStatus('Map library failed to load. Check your connection and reopen.');
+}
+
 function fmtDist(m) {
   if (m == null) return '';
   return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
@@ -44,6 +53,14 @@ function startMap() {
 
   const meIcon = L.divIcon({ className: 'me-icon', html: '<div class="me-dot"></div>', iconSize: [16, 16] });
   L.marker([lat, lng], { icon: meIcon }).addTo(map).bindPopup('You are here');
+
+  // Telegram webviews often report the final viewport size only after the app
+  // has rendered, leaving Leaflet with a 0-height canvas (a white screen). Nudge
+  // it to re-measure once things settle and whenever Telegram resizes us.
+  const fix = () => map.invalidateSize();
+  setTimeout(fix, 200);
+  setTimeout(fix, 600);
+  if (tg && tg.onEvent) tg.onEvent('viewportChanged', fix);
 
   loadSpots();
 }
