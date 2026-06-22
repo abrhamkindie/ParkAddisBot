@@ -35,14 +35,16 @@ function directionsUrl(la, ln) {
   return 'https://www.google.com/maps/dir/?api=1&destination=' + la + ',' + ln;
 }
 
+// Declared before the call below — startMap() assigns `map`, so the binding must
+// be initialised first (otherwise it's a temporal-dead-zone ReferenceError).
+let map;
+let routeLayer = null;
+
 if (!isFinite(lat) || !isFinite(lng)) {
   setStatus('Location missing. Open this from the bot after sharing your location.');
 } else {
   startMap();
 }
-
-let map;
-let routeLayer = null;
 
 function startMap() {
   map = L.map('map', { zoomControl: true }).setView([lat, lng], 15);
