@@ -8,6 +8,21 @@ export function languageKeyboard(t) {
     .text(t('language.amharic'), 'lang:am');
 }
 
+// Inline CTA shown under the welcome message: one tap to start a parking search.
+export function welcomeKeyboard(t) {
+  return new InlineKeyboard().text(t('start.find_parking_cta'), 'nearby:find');
+}
+
+// Actions under a single native venue pin: book, directions, full details.
+export function venuePinKeyboard(t, spot) {
+  const kb = new InlineKeyboard().text(t('spot.book_now'), `book:start:${spot.id}`);
+  if (spot.lat != null && spot.lng != null) {
+    kb.url(t('common.directions'), directionsUrl(spot.lat, spot.lng));
+  }
+  kb.text(t('nearby.details_button'), `spot:view:${spot.id}`);
+  return kb;
+}
+
 // Main reply (persistent) menu shown to drivers.
 export function mainMenuKeyboard(t) {
   return new Keyboard()
@@ -69,21 +84,24 @@ export function startTimeKeyboard(t, spotId) {
     .text(t('common.cancel'), 'book:cancel');
 }
 
-// Duration choices (in hours).
+// Duration choices (in hours). Back returns to the start-time step.
 export function durationKeyboard(t, spotId, startOffsetMin) {
   const kb = new InlineKeyboard();
   [1, 2, 3, 4].forEach((h) => {
     kb.text(t('booking.duration_hours', { hours: h }), `book:dur:${spotId}:${startOffsetMin}:${h}`);
     if (h % 2 === 0) kb.row();
   });
-  kb.row().text(t('common.cancel'), 'book:cancel');
+  kb.row()
+    .text(t('common.back'), `book:to_start:${spotId}`)
+    .text(t('common.cancel'), 'book:cancel');
   return kb;
 }
 
-// Final confirm.
+// Final confirm. Back returns to the duration step (re-using the start_at route).
 export function confirmBookingKeyboard(t, spotId, startOffsetMin, hours) {
   return new InlineKeyboard()
     .text(t('booking.confirm'), `book:confirm:${spotId}:${startOffsetMin}:${hours}`)
     .row()
+    .text(t('common.back'), `book:start_at:${spotId}:${startOffsetMin}`)
     .text(t('common.cancel'), 'book:cancel');
 }

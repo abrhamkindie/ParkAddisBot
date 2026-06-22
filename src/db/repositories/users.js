@@ -1,6 +1,9 @@
 import { query } from '../index.js';
 
-// Insert the user if new, otherwise refresh name/username. Returns the row.
+// Insert the user if new, otherwise refresh name/username. Returns the row with
+// an extra `is_new` flag: on an INSERT the tuple's xmax is 0, on an UPDATE it is
+// the locking txid (non-zero). Lets /start greet first-timers without re-asking
+// returning users for their language every time.
 export async function upsertUser({ telegramId, name, username }) {
   const { rows } = await query(
     `INSERT INTO users (telegram_id, name, username)
@@ -8,7 +11,7 @@ export async function upsertUser({ telegramId, name, username }) {
      ON CONFLICT (telegram_id) DO UPDATE
        SET name = COALESCE(EXCLUDED.name, users.name),
            username = COALESCE(EXCLUDED.username, users.username)
-     RETURNING *`,
+     RETURNING *, (xmax = 0) AS is_new`,
     [telegramId, name || null, username || null]
   );
   return rows[0];

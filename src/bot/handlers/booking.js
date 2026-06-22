@@ -72,6 +72,15 @@ export function registerBooking(bot) {
     await beginBooking(ctx, Number(ctx.match[1]));
   });
 
+  // Back from the duration step → re-show the start-time choices (edit in place).
+  bot.callbackQuery(/^book:to_start:(\d+)$/, async (ctx) => {
+    const spotId = Number(ctx.match[1]);
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText(ctx.t('booking.choose_start'), {
+      reply_markup: startTimeKeyboard(ctx.t, spotId),
+    });
+  });
+
   // Step 2: chose start offset → choose duration.
   bot.callbackQuery(/^book:start_at:(\d+):(\d+)$/, async (ctx) => {
     const spotId = Number(ctx.match[1]);

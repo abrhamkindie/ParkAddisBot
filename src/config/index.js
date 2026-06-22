@@ -26,6 +26,9 @@ export const config = {
   search: {
     defaultRadiusM: int(process.env.DEFAULT_SEARCH_RADIUS_M, 2000),
     maxResults: int(process.env.MAX_SEARCH_RESULTS, 8),
+    // How many nearby spots to drop as native map pins in the chat. The rest are
+    // still reachable via the interactive map button.
+    maxInlinePins: int(process.env.MAX_INLINE_PINS, 5),
   },
 
   business: {

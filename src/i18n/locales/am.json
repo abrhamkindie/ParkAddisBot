@@ -15,6 +15,9 @@
   "start": {
     "choose_language": "ወደ {app} እንኳን በደህና መጡ! 🚗\nእባክዎ ቋንቋዎን ይምረጡ:",
     "welcome_driver": "ሰላም {name}! 👋\n\nቀጥታ ሥፍራዎን ያጋሩ፣ በአቅራቢያዎ ያሉ የመኪና ማቆሚያዎችን አገኝልዎታለሁ።\n\nለመጀመር ከታች ያለውን ሜኑ ይጠቀሙ።",
+    "welcome_back": "እንኳን ደህና ተመለሱ{name}! 👋\n\nበአቅራቢያዎ ነፃ ማቆሚያ ለማግኘት ከታች ይንኩ።",
+    "find_parking_cta": "🅿️ በአቅራቢያዬ ማቆሚያ ፈልግ",
+    "menu_ready": "📋 ሜኑዎ ከታች ዝግጁ ነው — በፈለጉ ጊዜ ይጠቀሙበት።",
     "language_set": "ቋንቋ ወደ አማርኛ ተቀይሯል። ✅"
   },
   "language": {
@@ -37,16 +40,24 @@
     "none_found": "በ{radius} ኪሜ ውስጥ ነፃ ማቆሚያ አልተገኘም። ቦታዎን ያንቀሳቅሱ ወይም ቆይተው ይሞክሩ።",
     "results_header": "በአቅራቢያዎ {count} ማቆሚያ(ዎች) ተገኝተዋል:",
     "map_cta": "🅿️ በአቅራቢያዎ {count} ማቆሚያ(ዎች) ተገኝተዋል — በካርታ ላይ ለማየት ይንኩ:",
+    "pins_header": "🅿️ በአቅራቢያዎ {count} ነፃ ማቆሚያ(ዎች) ተገኝተዋል። ለማስያዝ ወይም አቅጣጫ ለማግኘት ፒኑን ይንኩ 👇",
+    "pins_header_far": "በ{radius} ኪሜ ውስጥ የለም — በጣም ቅርብ የሆኑት {count} እነዚህ ናቸው (በቅርቡ ያለው {distance} ይርቃል) 👇",
+    "pins_more": "➕ ሌሎች {count} — ሁሉንም ለማየት ካርታውን ይክፈቱ።",
+    "pin_title": "{price} {currency}/ሰዓት · 🚶 {minutes} ደቂቃ{rating}",
+    "pin_rating": " · ⭐ {rating}",
     "results_header_far": "በ{radius} ኪሜ ውስጥ የለም፣ ነገር ግን በጣም ቅርብ የሆኑት እነዚህ ናቸው (በቅርቡ ያለው {distance} ይርቃል):",
     "spot_line": "{index}. {address} — {price} {currency}/ሰዓት · {distance}{badges}",
     "open_map": "🗺️ ካርታ ክፈት",
+    "details_button": "ℹ️ ዝርዝር",
     "view_spot": "እይ",
     "book_spot": "#{index} ያስይዙ"
   },
   "spot": {
     "details_title": "🅿️ {address}",
+    "available_now": "✅ አሁን ይገኛል",
     "price": "💵 ዋጋ: {price} {currency}/ሰዓት",
     "distance": "📏 ርቀት: {distance}",
+    "walk_time": "🚶 በግምት {minutes} ደቂቃ የእግር መንገድ",
     "capacity": "🚗 አቅም: {capacity}",
     "rating": "⭐ ደረጃ: {rating} ({count} ግምገማዎች)",
     "no_rating": "⭐ ገና ደረጃ የለም",

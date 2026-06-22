@@ -1,8 +1,13 @@
 import { InlineKeyboard } from 'grammy';
 import { config } from '../../config/index.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
-import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard } from '../keyboards.js';
-import { spotLine, spotDetail } from '../views/spot.js';
+import {
+  shareLocationKeyboard,
+  nearbyResultsKeyboard,
+  spotDetailKeyboard,
+  venuePinKeyboard,
+} from '../keyboards.js';
+import { spotLine, spotDetail, buildNearbyPresentation } from '../views/spot.js';
 import { allTranslations } from '../../i18n/index.js';
 import { logger } from '../../utils/logger.js';
 
@@ -18,23 +23,50 @@ function miniAppUrl(lat, lng) {
   return u.toString();
 }
 
-// Map-first results: when a Mini App URL is available, lead with a one-tap
-// "view on map" button, then show the list as a fallback below (no duplicate map
-// button on the list). Without https, just the list.
-async function presentResults(ctx, lat, lng, spots, headerText) {
+// Fallback when native venue pins can't be sent: the classic text list (with a
+// map button when https is available).
+async function presentList(ctx, lat, lng, spots, headerText) {
   const t = ctx.t;
   const mapUrl = miniAppUrl(lat, lng);
-
   if (mapUrl) {
     await ctx.reply(t('nearby.map_cta', { count: spots.length }), {
       reply_markup: new InlineKeyboard().webApp(t('nearby.open_map'), mapUrl),
     });
   }
-
   const body = spots.map((s, i) => spotLine(t, s, i)).join('\n');
   await ctx.reply(`${headerText}\n\n${body}`, {
     reply_markup: nearbyResultsKeyboard(t, spots, {}),
   });
+}
+
+// Map-first results: immediately drop a native map pin per nearby spot in the
+// chat (each with Book/Directions/Details), led by a header that also carries the
+// one-tap interactive-map button. Pins render even without the https tunnel, so
+// if anything goes wrong we degrade to the plain text list rather than fail.
+async function presentResults(ctx, lat, lng, spots, headerText) {
+  const t = ctx.t;
+  const mapUrl = miniAppUrl(lat, lng);
+  const plan = buildNearbyPresentation(t, spots, {
+    mapUrl,
+    maxPins: config.search.maxInlinePins,
+    headerText,
+  });
+
+  try {
+    await ctx.reply(plan.lead.text, {
+      reply_markup: plan.lead.mapUrl
+        ? new InlineKeyboard().webApp(t('nearby.open_map'), plan.lead.mapUrl)
+        : undefined,
+    });
+    for (const pin of plan.pins) {
+      await ctx.replyWithVenue(pin.lat, pin.lng, pin.title, pin.address, {
+        reply_markup: venuePinKeyboard(t, { id: pin.spotId, lat: pin.lat, lng: pin.lng }),
+      });
+    }
+  } catch (err) {
+    logger.warn('venue pins failed; falling back to list', { error: err.message });
+    await presentList(ctx, lat, lng, spots, headerText);
+  }
 }
 
 async function runSearch(ctx, lat, lng) {
@@ -66,22 +98,32 @@ async function runSearch(ctx, lat, lng) {
       return ctx.reply(t('nearby.none_found', { radius: (radiusM / 1000).toFixed(1) }));
     }
     const distance = `${(nearest[0].distance_m / 1000).toFixed(1)} km`;
-    const header = t('nearby.results_header_far', {
+    const header = t('nearby.pins_header_far', {
       radius: (radiusM / 1000).toFixed(1),
+      count: nearest.length,
       distance,
     });
     return presentResults(ctx, lat, lng, nearest, header);
   }
 
-  return presentResults(ctx, lat, lng, spots, t('nearby.results_header', { count: spots.length }));
+  return presentResults(ctx, lat, lng, spots, t('nearby.pins_header', { count: spots.length }));
+}
+
+// Prompt the driver to share their location (the entry point to a search).
+async function askForLocation(ctx) {
+  await ctx.reply(ctx.t('nearby.ask_location'), {
+    reply_markup: shareLocationKeyboard(ctx.t),
+  });
 }
 
 export function registerNearby(bot) {
   // "Find parking" menu button → ask for location.
-  bot.hears(allTranslations('menu.find_parking'), async (ctx) => {
-    await ctx.reply(ctx.t('nearby.ask_location'), {
-      reply_markup: shareLocationKeyboard(ctx.t),
-    });
+  bot.hears(allTranslations('menu.find_parking'), askForLocation);
+
+  // Inline "Find parking" CTA (from the welcome message) → same prompt.
+  bot.callbackQuery('nearby:find', async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await askForLocation(ctx);
   });
 
   // Any shared location (live or static) triggers a search.

@@ -15,6 +15,9 @@
   "start": {
     "choose_language": "Welcome to {app}! 🚗\nPlease choose your language:",
     "welcome_driver": "Hi {name}! 👋\n\nShare your live location and I'll find parking spots near you.\n\nUse the menu below to get started.",
+    "welcome_back": "Welcome back{name}! 👋\n\nTap below to find available parking near you.",
+    "find_parking_cta": "🅿️ Find parking near me",
+    "menu_ready": "📋 Your menu is ready below — it's there whenever you need it.",
     "language_set": "Language set to English. ✅"
   },
   "language": {
@@ -37,16 +40,24 @@
     "none_found": "No available parking found within {radius} km. Try moving the search area or check back later.",
     "results_header": "Found {count} spot(s) near you:",
     "map_cta": "🅿️ Found {count} spot(s) near you — tap to see them on the map:",
+    "pins_header": "🅿️ Found {count} available spot(s) near you. Tap a pin to book or get directions 👇",
+    "pins_header_far": "No spots within {radius} km — here are the {count} closest (nearest is {distance} away) 👇",
+    "pins_more": "➕ {count} more — open the map to see them all.",
+    "pin_title": "{price} {currency}/hr · 🚶 {minutes} min{rating}",
+    "pin_rating": " · ⭐ {rating}",
     "results_header_far": "No spots within {radius} km, but here are the closest ones (nearest is {distance} away):",
     "spot_line": "{index}. {address} — {price} {currency}/hr · {distance}{badges}",
     "open_map": "🗺️ Open map view",
+    "details_button": "ℹ️ Details",
     "view_spot": "View",
     "book_spot": "Book #{index}"
   },
   "spot": {
     "details_title": "🅿️ {address}",
+    "available_now": "✅ Available now",
     "price": "💵 Price: {price} {currency}/hour",
     "distance": "📏 Distance: {distance}",
+    "walk_time": "🚶 About {minutes} min walk",
     "capacity": "🚗 Capacity: {capacity}",
     "rating": "⭐ Rating: {rating} ({count} reviews)",
     "no_rating": "⭐ No ratings yet",

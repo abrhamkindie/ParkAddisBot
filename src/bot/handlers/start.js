@@ -1,5 +1,5 @@
 import { config } from '../../config/index.js';
-import { languageKeyboard, mainMenuKeyboard } from '../keyboards.js';
+import { languageKeyboard, mainMenuKeyboard, welcomeKeyboard } from '../keyboards.js';
 import { handleCheckin } from './checkin.js';
 import { beginBooking } from './booking.js';
 
@@ -15,10 +15,15 @@ export function registerStart(bot) {
       if (Number.isFinite(spotId)) return beginBooking(ctx, spotId);
     }
     const t = ctx.t;
-    // First-time-ish: always offer language on /start, it's cheap and clear.
-    await ctx.reply(t('start.choose_language', { app: config.appName }), {
-      reply_markup: languageKeyboard(t),
-    });
+    // Only ask brand-new users to pick a language; returning users go straight to
+    // a warm welcome so /start isn't a language quiz every time.
+    if (ctx.dbUser?.is_new) {
+      await ctx.reply(t('start.choose_language', { app: config.appName }), {
+        reply_markup: languageKeyboard(t),
+      });
+      return;
+    }
+    await sendMainMenu(ctx, { returning: true });
   });
 
   // Help command + menu button.
@@ -29,10 +34,16 @@ export function registerStart(bot) {
   });
 }
 
-// Sends the persistent main menu (used after language pick).
-export async function sendMainMenu(ctx) {
+// Sends the welcome + persistent main menu. For returning users we use a shorter
+// "welcome back" line; both carry a one-tap "Find parking" inline CTA, then the
+// persistent reply menu in a follow-up so both keyboards attach cleanly.
+export async function sendMainMenu(ctx, { returning = false } = {}) {
   const t = ctx.t;
-  await ctx.reply(t('start.welcome_driver', { name: ctx.dbUser?.name || '' }), {
-    reply_markup: mainMenuKeyboard(t),
-  });
+  const name = ctx.dbUser?.name ? ` ${ctx.dbUser.name}` : '';
+  const text = returning
+    ? t('start.welcome_back', { name })
+    : t('start.welcome_driver', { name: ctx.dbUser?.name || '' });
+
+  await ctx.reply(text, { reply_markup: welcomeKeyboard(t) });
+  await ctx.reply(t('start.menu_ready'), { reply_markup: mainMenuKeyboard(t) });
 }
