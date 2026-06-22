@@ -7,7 +7,7 @@ import { registerLanguage } from './handlers/language.js';
 import { registerNearby } from './handlers/nearby.js';
 import { registerBooking } from './handlers/booking.js';
 import { registerBookingsList } from './handlers/bookingsList.js';
-import { registerHost } from './handlers/host.js';
+import { registerHost, hostFlowMiddleware } from './handlers/host.js';
 import { registerCheckin } from './handlers/checkin.js';
 
 export function createBot() {
@@ -33,6 +33,10 @@ export function createBot() {
 
   // Every update: load/refresh the user and attach ctx.t + ctx.dbUser.
   bot.use(userMiddleware());
+
+  // Intercepts messages while a user is mid-wizard (listing a spot / editing a
+  // price) so step input isn't mistaken for a menu action or parking search.
+  bot.use(hostFlowMiddleware());
 
   // Order matters: specific commands/callbacks before generic hears().
   registerStart(bot);

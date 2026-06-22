@@ -37,6 +37,22 @@ export async function listByDriver(driverId, limit = 10) {
   return rows;
 }
 
+// Upcoming/active bookings for a spot (for the host's "view bookings"), with the
+// driver name joined in. Excludes past/cancelled/completed.
+export async function listBySpot(spotId, limit = 10) {
+  const { rows } = await query(
+    `SELECT b.*, d.name AS driver_name
+     FROM bookings b JOIN users d ON d.id = b.driver_id
+     WHERE b.spot_id = $1
+       AND b.status IN ('reserved','confirmed','active')
+       AND b.end_time >= now()
+     ORDER BY b.start_time ASC
+     LIMIT $2`,
+    [spotId, limit]
+  );
+  return rows;
+}
+
 export async function updateStatus(id, status, extra = {}) {
   const { rows } = await query(
     `UPDATE bookings SET status = $2,

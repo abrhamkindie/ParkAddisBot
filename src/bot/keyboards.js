@@ -19,6 +19,8 @@ export function mainMenuKeyboard(t) {
     .text(t('menu.find_parking'))
     .row()
     .text(t('menu.my_bookings'))
+    .text(t('menu.my_spots'))
+    .row()
     .text(t('menu.become_host'))
     .row()
     .text(t('menu.language'))
@@ -61,6 +63,67 @@ export function spotDetailKeyboard(t, spot) {
   }
   kb.text(t('common.back'), 'nearby:back');
   return kb;
+}
+
+// ---- Host listing wizard ----
+
+// Reply keyboard asking the host to share the spot's location.
+export function spotLocationKeyboard(t) {
+  return new Keyboard()
+    .requestLocation(t('host.share_location_button'))
+    .row()
+    .text(t('common.cancel'))
+    .resized();
+}
+
+// Reply keyboard with Skip + Cancel (address, photo steps).
+export function skipKeyboard(t) {
+  return new Keyboard().text(t('common.skip')).row().text(t('common.cancel')).resized();
+}
+
+// Reply keyboard with just Cancel (free-text steps where skipping isn't allowed).
+export function cancelKeyboard(t) {
+  return new Keyboard().text(t('common.cancel')).resized();
+}
+
+// Inline quick-pick for capacity (typing a number also works).
+export function capacityKeyboard(t) {
+  const kb = new InlineKeyboard();
+  [1, 2, 3].forEach((n) => kb.text(String(n), `host:cap:${n}`));
+  kb.row();
+  [5, 10].forEach((n) => kb.text(String(n), `host:cap:${n}`));
+  return kb;
+}
+
+// Inline amenity toggles reflecting the current draft, plus Continue.
+export function amenitiesKeyboard(t, draft = {}) {
+  const mark = (on) => (on ? '✅' : '⬜');
+  return new InlineKeyboard()
+    .text(`${mark(draft.covered)} ${t('spot.covered')}`, 'host:am:covered')
+    .row()
+    .text(`${mark(draft.guarded)} ${t('spot.guarded')}`, 'host:am:guarded')
+    .row()
+    .text(`${mark(draft.ev_charging)} ${t('spot.ev_charging')}`, 'host:am:ev')
+    .row()
+    .text(t('host.amenity_continue'), 'host:am:done');
+}
+
+// Per-spot management actions in "My spots".
+export function spotManageKeyboard(t, spot) {
+  const toggle = spot.is_available ? t('host.btn_pause') : t('host.btn_resume');
+  return new InlineKeyboard()
+    .text(toggle, `host:toggle:${spot.id}`)
+    .text(t('host.btn_edit_price'), `host:price:${spot.id}`)
+    .row()
+    .text(t('host.btn_bookings'), `host:bk:${spot.id}`)
+    .text(t('host.btn_delete'), `host:del:${spot.id}`);
+}
+
+// Delete confirmation.
+export function deleteConfirmKeyboard(t, spotId) {
+  return new InlineKeyboard()
+    .text(t('host.btn_delete_yes'), `host:delok:${spotId}`)
+    .text(t('host.btn_delete_no'), `host:delno:${spotId}`);
 }
 
 // Start-time choices.
