@@ -24,8 +24,8 @@ export const config = {
   pgSsl: bool(process.env.PGSSL, false) ? { rejectUnauthorized: false } : false,
 
   search: {
-    defaultRadiusM: int(process.env.DEFAULT_SEARCH_RADIUS_M, 2000),
-    maxResults: int(process.env.MAX_SEARCH_RESULTS, 8),
+    defaultRadiusM: int(process.env.DEFAULT_SEARCH_RADIUS_M, 15000),
+    maxResults: int(process.env.MAX_SEARCH_RESULTS, 20),
   },
 
   business: {

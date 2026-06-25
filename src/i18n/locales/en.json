@@ -29,6 +29,7 @@
   },
   "menu": {
     "find_parking": "🅿️ Find parking",
+    "browse_areas": "🗺️ Browse by area",
     "my_bookings": "📋 My bookings",
     "my_favorites": "⭐ My favorites",
     "become_host": "🏠 List your spot",
@@ -50,6 +51,11 @@
     "open_map": "🗺️ Open interactive map",
     "view_spot": "View",
     "book_spot": "Book #{index}"
+  },
+  "browse": {
+    "pick_area": "🗺️ Pick an area to browse parking spots:",
+    "none_in_area": "No available spots found in {area} right now.",
+    "results_header": "🅿️ Spots in {area} ({count} available):"
   },
   "spot": {
     "details_title": "🅿️ {address}",

@@ -55,7 +55,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .custom-pin {
   background: transparent !important;
   border: none !important;
+  box-shadow: none !important;
 }
+
+/* Override Leaflet's default divIcon white box */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 .custom-pin svg {
   display: block;
   width: 32px;
