@@ -279,26 +279,17 @@ function startMap() {
 }
 
 function priceIcon(price) {
-  // Google Maps-style red pin with price label
   const priceText = price ? price.toString() : '';
   return L.divIcon({
-    className: 'custom-pin',
     html: `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      <g filter="url(#shadow)">
-        <path d="M16 0C7.2 0 0 7.2 0 16c0 12 16 28 16 28s16-16 16-28C32 7.2 24.8 0 16 0z" fill="#ea4335" stroke="#fff" stroke-width="2"/>
-        <circle cx="16" cy="16" r="8" fill="#fff"/>
-        <text x="16" y="20" font-size="10" font-weight="bold" fill="#ea4335" text-anchor="middle">${priceText}</text>
-      </g>
+      <path d="M16 0C7.2 0 0 7.2 0 16c0 12 16 28 16 28s16-16 16-28C32 7.2 24.8 0 16 0z" fill="#ea4335" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="8" fill="#fff"/>
+      <text x="16" y="20" font-size="10" font-weight="bold" fill="#ea4335" text-anchor="middle">${priceText}</text>
     </svg>`,
+    className: '',
     iconSize: [32, 44],
-    iconAnchor: [16, 44], // Point is at bottom center
+    iconAnchor: [16, 44],
     popupAnchor: [0, -44],
-    className: 'custom-pin'
   });
 }
 

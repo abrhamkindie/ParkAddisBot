@@ -103,3 +103,22 @@ export async function setAvailability(spotId, ownerId, isAvailable) {
   );
   return rows[0] || null;
 }
+
+// Browse all active+available spots within a bounding box (for area browsing).
+// Returns rows with a centre-point distance from the area's centre.
+export async function findByArea({ centerLat, centerLng, latDelta, lngDelta, limit }) {
+  const { rows } = await query(
+    `SELECT s.id, s.owner_id, s.address, s.price_per_hour, s.capacity,
+            s.covered, s.guarded, s.ev_charging, s.rating_avg, s.rating_count,
+            ST_Y(s.geom::geometry) AS lat, ST_X(s.geom::geometry) AS lng,
+            ST_Distance(s.geom, ST_MakePoint($2, $1)::geography) AS distance_m
+       FROM spots s
+      WHERE s.status = 'active' AND s.is_available = true
+        AND ST_Y(s.geom::geometry) BETWEEN $1 - $3 AND $1 + $3
+        AND ST_X(s.geom::geometry) BETWEEN $2 - $4 AND $2 + $4
+      ORDER BY distance_m ASC, s.price_per_hour ASC
+      LIMIT $5`,
+    [centerLat, centerLng, latDelta, lngDelta, limit]
+  );
+  return rows;
+}

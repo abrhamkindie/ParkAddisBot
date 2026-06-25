@@ -17,6 +17,7 @@ export function welcomeKeyboard(t) {
 export function mainMenuKeyboard(t) {
   return new Keyboard()
     .text(t('menu.find_parking'))
+    .text(t('menu.browse_areas'))
     .row()
     .text(t('menu.my_bookings'))
     .text(t('menu.my_spots'))
@@ -27,6 +28,31 @@ export function mainMenuKeyboard(t) {
     .text(t('menu.help'))
     .resized()
     .persistent();
+}
+
+// Neighbourhood area picker — no location required.
+export const AREAS = [
+  { key: 'bole',       label: '🅿️ Bole',        lat: 8.9930, lng: 38.7990 },
+  { key: 'megenagna',  label: '🅿️ Megenagna',   lat: 9.0210, lng: 38.8000 },
+  { key: 'piassa',     label: '🅿️ Piassa',      lat: 9.0340, lng: 38.7510 },
+  { key: 'kazanchis',  label: '🅿️ Kazanchis',   lat: 9.0100, lng: 38.7630 },
+  { key: 'mexico',     label: '🅿️ Mexico Sq',   lat: 9.0090, lng: 38.7470 },
+  { key: 'stadium',    label: '🅿️ Stadium',      lat: 9.0210, lng: 38.7620 },
+  { key: 'arat_kilo',  label: '🅿️ Arat Kilo',   lat: 9.0430, lng: 38.7630 },
+  { key: 'cmc',        label: '🅿️ CMC',          lat: 9.0310, lng: 38.8280 },
+  { key: 'gerji',      label: '🅿️ Gerji',        lat: 9.0100, lng: 38.8200 },
+  { key: 'sarbet',     label: '🅿️ Sarbet',       lat: 8.9820, lng: 38.7660 },
+  { key: 'lideta',     label: '🅿️ Lideta',       lat: 9.0150, lng: 38.7430 },
+  { key: 'kality',     label: '🅿️ Kality',       lat: 8.9380, lng: 38.7780 },
+];
+
+export function areaBrowserKeyboard() {
+  const kb = new InlineKeyboard();
+  AREAS.forEach((area, i) => {
+    kb.text(area.label, `browse:area:${area.key}`);
+    if (i % 2 === 1) kb.row();
+  });
+  return kb;
 }
 
 // Reply keyboard with a single "share location" request button.

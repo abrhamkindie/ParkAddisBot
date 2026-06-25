@@ -27,6 +27,7 @@
   },
   "menu": {
     "find_parking": "🅿️ ማቆሚያ ፈልግ",
+    "browse_areas": "🗺️ አካባቢ ዳስስ",
     "my_bookings": "📋 ቦታ ያስያዝኳቸው",
     "become_host": "🏠 ቦታዎን ያስመዝግቡ",
     "my_spots": "🏠 የእኔ ቦታዎች",
@@ -47,6 +48,11 @@
     "open_map": "🗺️ መስተጋብራዊ ካርታ ክፈት",
     "view_spot": "እይ",
     "book_spot": "#{index} ያስይዙ"
+  },
+  "browse": {
+    "pick_area": "🗺️ ማቆሚያ ለማየት አካባቢ ይምረጡ:",
+    "none_in_area": "በ{area} አሁን ምንም ነፃ ቦታ አልተገኘም።",
+    "results_header": "🅿️ በ{area} ያሉ ቦታዎች ({count} ነፃ):"
   },
   "spot": {
     "details_title": "🅿️ {address}",

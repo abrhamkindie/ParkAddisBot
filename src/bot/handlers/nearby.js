@@ -1,7 +1,7 @@
 import { InputFile } from 'grammy';
 import { config } from '../../config/index.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
-import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard } from '../keyboards.js';
+import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard, areaBrowserKeyboard, AREAS } from '../keyboards.js';
 import { spotLine, spotDetail, buildMapCaption } from '../views/spot.js';
 import { renderNearbyMap } from '../../utils/staticMap.js';
 import { allTranslations } from '../../i18n/index.js';
@@ -150,6 +150,36 @@ export function registerNearby(bot) {
     if (spot.lat != null && spot.lng != null) {
       await ctx.replyWithLocation(spot.lat, spot.lng);
     }
+  });
+
+  // "Browse by area" menu button → show area picker (no location needed).
+  bot.hears(allTranslations('menu.browse_areas'), async (ctx) => {
+    await ctx.reply(ctx.t('browse.pick_area'), {
+      reply_markup: areaBrowserKeyboard(),
+    });
+  });
+
+  // User picked a neighbourhood area.
+  bot.callbackQuery(/^browse:area:(.+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const key = ctx.match[1];
+    const area = AREAS.find((a) => a.key === key);
+    if (!area) return;
+
+    const spots = await spotsRepo.findByArea({
+      centerLat: area.lat,
+      centerLng: area.lng,
+      latDelta: 0.025,   // ~2.7 km north/south
+      lngDelta: 0.030,   // ~2.7 km east/west
+      limit: config.search.maxResults,
+    });
+
+    if (!spots.length) {
+      return ctx.reply(ctx.t('browse.none_in_area', { area: area.label }));
+    }
+
+    const header = ctx.t('browse.results_header', { area: area.label, count: spots.length });
+    await presentResults(ctx, area.lat, area.lng, spots, header);
   });
 
   // "Back" from a spot detail — just acknowledge; the result list is still above.
