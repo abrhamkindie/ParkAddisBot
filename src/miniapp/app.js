@@ -9,6 +9,12 @@ const bot = params.get('bot') || '';
 
 const statusEl = document.getElementById('status');
 const cardEl = document.getElementById('card');
+const searchInput = document.getElementById('searchInput');
+const myLocationBtn = document.getElementById('myLocationBtn');
+const compassBtn = document.getElementById('compassBtn');
+const mapTypeBtn = document.getElementById('mapTypeBtn');
+const mapTypeMenu = document.getElementById('mapTypeMenu');
+const mapTypeContainer = document.getElementById('mapTypeContainer');
 
 function setStatus(msg) {
   if (msg) { statusEl.textContent = msg; statusEl.style.display = 'block'; }
@@ -41,6 +47,10 @@ let map;
 let routeLayer = null;
 let currentTileLayer = null;
 let baseLayers = {};
+let currentMapType = 'map';
+let allSpots = [];
+let markers = [];
+let mapRotation = 0; // degrees, clockwise = positive
 
 if (!isFinite(lat) || !isFinite(lng)) {
   setStatus('Location missing. Open this from the bot after sharing your location.');
@@ -101,32 +111,165 @@ function startMap() {
     console.warn('Tile loading error:', error);
   });
 
-  const meIcon = L.divIcon({ className: 'me-icon', html: '<div class="me-dot"></div>', iconSize: [16, 16] });
+  const meIcon = L.divIcon({ className: 'me-icon', html: '<div class="me-dot"></div>', iconSize: [20, 20] });
   L.marker([lat, lng], { icon: meIcon }).addTo(map).bindPopup('You are here');
+
+  // My location button
+  myLocationBtn.addEventListener('click', () => {
+    map.setView([lat, lng], 16);
+    setStatus('Centered on your location');
+    setTimeout(() => setStatus(null), 2000);
+  });
+
+  // ── Two-finger rotate gesture ──────────────────────────────────────────────
+  // Track the angle between two touch points and rotate the map container.
+  // The compass needle counter-rotates so it always points true north.
+  // Tapping the compass snaps back to north (rotation = 0).
+
+  const mapEl = document.getElementById('map-rotate'); // rotate the oversized layer, not #map
+  let gestureStartAngle = null;   // angle at touch start
+  let gestureStartRotation = 0;   // mapRotation at touch start
+
+  function getTouchAngle(t1, t2) {
+    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  }
+
+  function applyRotation(deg) {
+    mapRotation = ((deg % 360) + 360) % 360; // normalise 0–360
+    mapEl.style.transform = `rotate(${mapRotation}deg)`;
+
+    // Needle counter-rotates inside its button so it always points north
+    compassBtn.querySelector('svg').style.transform = `rotate(${-mapRotation}deg)`;
+
+    // Show compass when rotated away from north, hide at north
+    if (mapRotation > 1 && mapRotation < 359) {
+      compassBtn.classList.remove('compass-hidden');
+    } else {
+      compassBtn.classList.add('compass-hidden');
+    }
+  }
+
+  // Attach gesture listeners to the clip wrapper so the full screen responds
+  const wrapEl = document.getElementById('map-wrap');
+
+  wrapEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      gestureStartAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      gestureStartRotation = mapRotation;
+    }
+  }, { passive: true });
+
+  wrapEl.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && gestureStartAngle !== null) {
+      const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      const delta = currentAngle - gestureStartAngle;
+      applyRotation(gestureStartRotation + delta);
+    }
+  }, { passive: true });
+
+  wrapEl.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      gestureStartAngle = null;
+    }
+  }, { passive: true });
+
+  // Tap compass → snap back to north with smooth transition
+  compassBtn.addEventListener('click', () => {
+    mapEl.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+    compassBtn.querySelector('svg').style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+    applyRotation(0);
+    setTimeout(() => {
+      mapEl.style.transition = '';
+      compassBtn.querySelector('svg').style.transition = '';
+    }, 380);
+  });
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Map type toggle functionality - Google Maps style dropdown
+  mapTypeBtn.addEventListener('click', () => {
+    mapTypeMenu.classList.toggle('hidden');
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!mapTypeContainer.contains(e.target)) {
+      mapTypeMenu.classList.add('hidden');
+    }
+  });
+
+  // Handle map type selection
+  document.querySelectorAll('.map-type-option').forEach(option => {
+    option.addEventListener('click', (e) => {
+      const type = e.currentTarget.dataset.type;
+      
+      // Update active state
+      document.querySelectorAll('.map-type-option').forEach(opt => opt.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      
+      // Switch tile layer
+      map.removeLayer(currentTileLayer);
+      
+      switch(type) {
+        case 'satellite':
+          baseLayers['🛰️ Satellite'].addTo(map);
+          currentTileLayer = baseLayers['🛰️ Satellite'];
+          break;
+        case 'terrain':
+          baseLayers['⛰️ Terrain'].addTo(map);
+          currentTileLayer = baseLayers['⛰️ Terrain'];
+          break;
+        default:
+          baseLayers['🗺️ Map'].addTo(map);
+          currentTileLayer = baseLayers['🗺️ Map'];
+      }
+      
+      currentMapType = type;
+      mapTypeMenu.classList.add('hidden');
+    });
+  });
+
+  // Set initial active state
+  document.querySelector('.map-type-option[data-type="map"]').classList.add('active');
+
+  // Search functionality
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    filterSpots(query);
+  });
 
   // Telegram webviews often report the final viewport size only after the app
   // has rendered, leaving Leaflet with a 0-height canvas (a white screen). Nudge
   // it to re-measure once things settle and whenever Telegram resizes us.
-  const fix = () => map.invalidateSize();
+  // Pass {reset:true} so Leaflet redraws tiles for the actual (larger) canvas.
+  const fix = () => map.invalidateSize({ reset: true });
   setTimeout(fix, 200);
   setTimeout(fix, 600);
-  setTimeout(fix, 1200); // Extra fix for slower connections
+  setTimeout(fix, 1200);
   if (tg && tg.onEvent) tg.onEvent('viewportChanged', fix);
 
   loadSpots();
 }
 
 function priceIcon(price) {
-  // Google Maps-style teardrop pin in green
+  // Google Maps-style red pin with price label
+  const priceText = price ? price.toString() : '';
   return L.divIcon({
     className: 'custom-pin',
-    html: `<svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
-      <path d="M15 0C6.7 0 0 6.7 0 15c0 11.3 15 27 15 27s15-15.7 15-27C30 6.7 23.3 0 15 0z" fill="#16a34a" stroke="#fff" stroke-width="2"/>
-      <circle cx="15" cy="15" r="6" fill="#fff"/>
+    html: `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <g filter="url(#shadow)">
+        <path d="M16 0C7.2 0 0 7.2 0 16c0 12 16 28 16 28s16-16 16-28C32 7.2 24.8 0 16 0z" fill="#ea4335" stroke="#fff" stroke-width="2"/>
+        <circle cx="16" cy="16" r="8" fill="#fff"/>
+        <text x="16" y="20" font-size="10" font-weight="bold" fill="#ea4335" text-anchor="middle">${priceText}</text>
+      </g>
     </svg>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42], // Point is at bottom center
-    popupAnchor: [0, -42],
+    iconSize: [32, 44],
+    iconAnchor: [16, 44], // Point is at bottom center
+    popupAnchor: [0, -44],
     className: 'custom-pin'
   });
 }
@@ -212,11 +355,11 @@ async function showDirections(s) {
         cardMeta.innerHTML = `🚗 ${distance} km · ${duration} min · ` + stars(s.rating_avg, s.rating_count);
       }
       
-      // Add "Open in Google Maps" option
+      // Add "Open in Google Maps" option (only if not already added)
       const cardActions = cardEl.querySelector('.card-actions');
-      if (cardActions) {
+      if (cardActions && !cardActions.querySelector('.gmaps-btn')) {
         const gmapsBtn = document.createElement('button');
-        gmapsBtn.className = 'btn';
+        gmapsBtn.className = 'btn gmaps-btn';
         gmapsBtn.innerHTML = '🌐 Google Maps';
         gmapsBtn.onclick = () => {
           const gmaps = directionsUrl(s.lat, s.lng);
@@ -237,6 +380,46 @@ async function showDirections(s) {
   }
 }
 
+function filterSpots(query) {
+  // Clear existing markers
+  markers.forEach(marker => map.removeLayer(marker));
+  markers = [];
+  
+  // Filter spots based on search query
+  const filteredSpots = allSpots.filter(s => {
+    if (!query) return true;
+    const address = (s.address || '').toLowerCase();
+    return address.includes(query);
+  });
+  
+  // Add filtered markers
+  const bounds = [[lat, lng]];
+  let spotsAdded = 0;
+  
+  filteredSpots.forEach((s) => {
+    if (s.lat && s.lng) {
+      const marker = L.marker([s.lat, s.lng], { icon: priceIcon(s.price_per_hour) }).addTo(map);
+      
+      // Make pins tappable
+      marker.on('click', function() {
+        console.log('Spot clicked:', s);
+        showCard(s);
+      });
+      
+      markers.push(marker);
+      bounds.push([s.lat, s.lng]);
+      spotsAdded++;
+    }
+  });
+  
+  if (spotsAdded > 0) {
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+  }
+  
+  setStatus(filteredSpots.length + ' spot(s) found');
+  setTimeout(() => setStatus(null), 2000);
+}
+
 async function loadSpots() {
   try {
     setStatus('Loading spots...');
@@ -250,6 +433,8 @@ async function loadSpots() {
       return; 
     }
 
+    // Store all spots for filtering
+    allSpots = d.spots;
     setStatus(null); // Clear loading message
     const bounds = [[lat, lng]];
     let spotsAdded = 0;
@@ -264,6 +449,7 @@ async function loadSpots() {
           showCard(s);
         });
         
+        markers.push(marker);
         bounds.push([s.lat, s.lng]);
         spotsAdded++;
       }

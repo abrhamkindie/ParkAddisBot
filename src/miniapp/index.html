@@ -9,9 +9,61 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div id="map"></div>
+    <!-- map-wrap clips to the screen; map-rotate is oversized so corners
+         never show when the user two-finger-rotates the map -->
+    <div id="map-wrap">
+      <div id="map-rotate">
+        <div id="map"></div>
+      </div>
+    </div>
     <div id="status" class="status">Loading map…</div>
     <div id="card" class="card hidden"></div>
+    <div class="search-container">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search parking spots..." />
+      </div>
+    </div>
+    <button id="myLocationBtn" class="location-btn" title="My location">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <path fill="#4285f4" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
+    </button>
+    <!-- Compass needle: hidden at north, appears on rotation, tap resets to north -->
+    <button id="compassBtn" class="compass-btn compass-hidden" title="Reset north" aria-label="Reset map orientation">
+      <svg viewBox="0 0 24 24" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+        <!-- North needle (red) -->
+        <polygon points="12,3 14.5,12 12,10.5 9.5,12" fill="#e74c3c"/>
+        <!-- South needle (grey) -->
+        <polygon points="12,21 14.5,12 12,13.5 9.5,12" fill="#bdc3c7"/>
+        <!-- Center dot -->
+        <circle cx="12" cy="12" r="1.5" fill="#5f6368"/>
+      </svg>
+    </button>
+    <div class="map-type-container" id="mapTypeContainer">
+      <button class="map-type-btn" id="mapTypeBtn" title="Change map type">
+        <svg class="map-type-icon" viewBox="0 0 18 18" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <!-- Leaflet-style layers icon (stacked chevrons + plus) -->
+          <path fill="#444" d="M9 0L0 5l9 5 9-5L9 0z"/>
+          <path fill="#444" d="M0 10l9 5 9-5-1.5-.83L9 13 1.5 9.17 0 10z"/>
+          <path fill="#444" d="M15 2v3m-1.5-1.5H17" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="map-type-menu hidden" id="mapTypeMenu">
+        <div class="map-type-option" data-type="map">
+          <span class="map-type-emoji">🗺️</span>
+          <span class="map-type-name">Map</span>
+        </div>
+        <div class="map-type-option" data-type="satellite">
+          <span class="map-type-emoji">�️</span>
+          <span class="map-type-name">Satellite</span>
+        </div>
+        <div class="map-type-option" data-type="terrain">
+          <span class="map-type-emoji">⛰️</span>
+          <span class="map-type-name">Terrain</span>
+        </div>
+      </div>
+    </div>
     <script src="./vendor/leaflet.js"></script>
     <script src="./app.js"></script>
   </body>
