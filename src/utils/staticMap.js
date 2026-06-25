@@ -7,6 +7,7 @@ import sharp from 'sharp';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { logger } from './logger.js';
 
 // Tile source is overridable (MAP_TILE_URL) so a busier deployment can point at a
 // provider with a proper usage allowance instead of the public OSM servers.
@@ -72,20 +73,42 @@ async function prepareIcons(count) {
  * `spots`, 1-based) and the driver at `lat,lng`. Auto-fits all points. Returns a
  * Buffer; throws if tiles/render fail so callers can fall back to a text list.
  */
-export async function renderNearbyMap({ lat, lng, spots, width = 640, height = 420 }) {
+export async function renderNearbyMap({ lat, lng, spots, width = 800, height = 600 }) {
   const pinnable = spots.filter((s) => s.lat != null && s.lng != null);
+  
+  logger.info('Preparing map render', { 
+    totalSpots: spots.length, 
+    pinnableSpots: pinnable.length,
+    width, 
+    height 
+  });
+  
+  if (pinnable.length === 0) {
+    throw new Error('No spots with coordinates to render');
+  }
+  
   const { me, pins } = await prepareIcons(pinnable.length);
 
   const map = new StaticMaps({
     width,
     height,
     tileUrl: TILE_URL,
-    paddingX: 40,
-    paddingY: 60,
+    paddingX: 50,
+    paddingY: 80,
     tileRequestTimeout: TILE_TIMEOUT_MS,
   });
 
-  map.addMarker({ coord: [Number(lng), Number(lat)], img: me, width: 22, height: 22, offsetX: 11, offsetY: 11 });
+  // Add user location marker
+  map.addMarker({ 
+    coord: [Number(lng), Number(lat)], 
+    img: me, 
+    width: 22, 
+    height: 22, 
+    offsetX: 11, 
+    offsetY: 11 
+  });
+  
+  // Add spot markers
   pinnable.forEach((s, i) => {
     map.addMarker({
       coord: [Number(s.lng), Number(s.lat)],
@@ -97,8 +120,14 @@ export async function renderNearbyMap({ lat, lng, spots, width = 640, height = 4
     });
   });
 
+  logger.info('Rendering map with staticmaps library...');
+  
   // Hard ceiling on the whole render so a stalled tile fetch can never hang the
   // chat — it surfaces as a rejection the caller catches and falls back from.
   await withTimeout(map.render(), RENDER_BUDGET_MS, 'map render');
-  return map.image.buffer('image/png');
+  
+  const buffer = map.image.buffer('image/png');
+  logger.info('Map rendered successfully', { bufferSize: buffer.length });
+  
+  return buffer;
 }

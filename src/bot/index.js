@@ -9,7 +9,13 @@ import { registerBooking } from './handlers/booking.js';
 import { registerBookingsList } from './handlers/bookingsList.js';
 import { registerHost, hostFlowMiddleware } from './handlers/host.js';
 import { registerCheckin } from './handlers/checkin.js';
+import { registerPayment } from './handlers/payment.js';
+import { registerRating } from './handlers/rating.js';
+import { registerFavorites } from './handlers/favorites.js';
+import { registerBookingModification } from './handlers/bookingModification.js';
 
+// Create the bot instance with all handlers.
+// Returns the bot object (caller decides whether to use polling or webhook).
 export function createBot() {
   assertBotConfig();
   const bot = new Bot(config.botToken);
@@ -43,9 +49,13 @@ export function createBot() {
   registerLanguage(bot);
   registerNearby(bot);
   registerBooking(bot);
+  registerPayment(bot); // Payment handlers (must be before bookingsList)
   registerBookingsList(bot);
   registerHost(bot); // also handles help + cancel hears()
   registerCheckin(bot);
+  registerRating(bot);
+  registerFavorites(bot);
+  registerBookingModification(bot);
 
   // Global error boundary so one bad update can't crash the long-poller.
   bot.catch((err) => {

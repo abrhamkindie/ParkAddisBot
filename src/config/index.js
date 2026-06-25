@@ -34,6 +34,7 @@ export const config = {
   },
 
   jwtSecret: process.env.JWT_SECRET || 'change-me',
+  jwtExpiry: process.env.JWT_EXPIRY || '24h',
   adminBootstrap: {
     email: process.env.ADMIN_BOOTSTRAP_EMAIL || '',
     password: process.env.ADMIN_BOOTSTRAP_PASSWORD || '',
@@ -42,6 +43,28 @@ export const config = {
   chapa: {
     secretKey: process.env.CHAPA_SECRET_KEY || '',
     webhookSecret: process.env.CHAPA_WEBHOOK_SECRET || '',
+  },
+
+  notifications: {
+    enabled: bool(process.env.ENABLE_NOTIFICATIONS, true),
+    checkIntervalMinutes: int(process.env.NOTIFICATION_CHECK_INTERVAL, 5),
+  },
+
+  telegram: {
+    mode: process.env.TELEGRAM_MODE || 'polling', // 'polling' or 'webhook'
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || '',
+    webhookPath: process.env.TELEGRAM_WEBHOOK_PATH || '/webhook/telegram',
+  },
+
+  security: {
+    corsOrigins: process.env.CORS_ORIGINS || '*',
+    rateLimitWindowMs: int(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000), // 15 minutes
+    rateLimitMaxRequests: int(process.env.RATE_LIMIT_MAX_REQUESTS, 100),
+  },
+
+  logging: {
+    level: process.env.LOG_LEVEL || 'info',
+    format: process.env.LOG_FORMAT || (process.env.NODE_ENV === 'production' ? 'json' : 'pretty'),
   },
 };
 

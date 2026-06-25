@@ -19,12 +19,6 @@ function miniAppUrl(lat, lng) {
   return u.toString();
 }
 
-// Build the inline keyboard that sits under the map photo (and the list
-// fallback): a per-spot Book + Directions row, plus the interactive-map button.
-function resultsKeyboard(t, lat, lng, spots) {
-  return nearbyResultsKeyboard(t, spots, { miniAppUrl: miniAppUrl(lat, lng) });
-}
-
 // Fallback when the map image can't be rendered (e.g. tiles unreachable): the
 // classic numbered text list with the same Book/Directions/map buttons.
 async function presentList(ctx, lat, lng, spots, headerText) {
@@ -34,21 +28,40 @@ async function presentList(ctx, lat, lng, spots, headerText) {
   });
 }
 
-// Map-first results: render ONE map image with every nearby spot as a numbered
-// pin (plus the driver's location) and send it as a single photo — the
-// Google-Maps-style overview. The numbered caption + Book/Directions buttons
-// line up with the pins. If rendering fails we degrade to the text list.
+// Map-first results: send an interactive Telegram WebApp map where users can
+// tap pins to view details and book spots.
 async function presentResults(ctx, lat, lng, spots, headerText) {
   const t = ctx.t;
-  try {
-    const png = await renderNearbyMap({ lat, lng, spots });
-    await ctx.replyWithPhoto(new InputFile(png, 'nearby.png'), {
-      caption: buildMapCaption(t, spots, { headerText }),
-      reply_markup: resultsKeyboard(t, lat, lng, spots),
+  
+  // Try to send the interactive miniapp map
+  const appUrl = miniAppUrl(lat, lng);
+  
+  if (appUrl) {
+    // Send as a WebApp button for interactive map experience
+    logger.info('Sending interactive map via WebApp', { spotCount: spots.length });
+    await ctx.reply(headerText, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '🗺️ Open Interactive Map', web_app: { url: appUrl } }],
+        ],
+      },
     });
-  } catch (err) {
-    logger.warn('map render failed; falling back to list', { error: err.message });
-    await presentList(ctx, lat, lng, spots, headerText);
+  } else {
+    // Fallback: render static map image if no https URL configured
+    logger.info('No HTTPS URL configured, rendering static map image');
+    try {
+      const png = await renderNearbyMap({ lat, lng, spots });
+      await ctx.replyWithPhoto(new InputFile(png, 'nearby.png'), {
+        caption: `${headerText}\n\nNote: Configure PUBLIC_URL with HTTPS for interactive map.`,
+      });
+      logger.info('Static map sent successfully');
+    } catch (err) {
+      logger.warn('Map render failed, falling back to list', { 
+        error: err.message,
+        stack: err.stack 
+      });
+      await presentList(ctx, lat, lng, spots, headerText);
+    }
   }
 }
 

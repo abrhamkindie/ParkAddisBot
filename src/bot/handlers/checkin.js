@@ -1,5 +1,6 @@
 import { InlineKeyboard } from 'grammy';
 import { checkIn, complete, CheckinError } from '../../services/checkinService.js';
+import { triggerRatingPrompt } from './rating.js';
 import { getTranslator } from '../../i18n/index.js';
 import { formatDateTime, formatMoney, currency } from '../../utils/format.js';
 import { logger } from '../../utils/logger.js';
@@ -67,6 +68,9 @@ export function registerCheckin(bot) {
         scannerRole: ctx.dbUser?.role,
       });
       await ctx.reply(ctx.t('checkin.completed_owner'));
+
+      // Trigger rating prompt to driver
+      await triggerRatingPrompt(ctx, bookingId);
     } catch (err) {
       if (err instanceof CheckinError) {
         const msg = err.code === 'NOT_OWNER' ? ctx.t('checkin.err_not_owner') : ctx.t('checkin.not_completable');
