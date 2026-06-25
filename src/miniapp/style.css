@@ -1,43 +1,113 @@
 * { box-sizing: border-box; }
-html, body, #map { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-#map { width: 100%; }
+
+/* Full-screen clip — nothing escapes this */
+#map-wrap {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #e8e0d8;
+}
+
+/* Oversized rotating container.
+   142vmax × 142vmax guarantees every corner stays outside the viewport
+   at any rotation angle (√2 × longer dimension). Centered with margin auto. */
+#map-rotate {
+  position: absolute;
+  width:  142vmax;
+  height: 142vmax;
+  /* center inside #map-wrap */
+  top:  50%;
+  left: 50%;
+  margin-top:  -71vmax;
+  margin-left: -71vmax;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Leaflet map fills the oversized container */
+#map {
+  width: 100%;
+  height: 100%;
+}
 
 .status {
-  position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,.78); color: #fff; padding: 8px 14px;
-  border-radius: 20px; font-size: 13px; z-index: 1000; max-width: 90%; text-align: center;
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.85); color: #fff; padding: 10px 16px;
+  border-radius: 24px; font-size: 14px; font-weight: 500; z-index: 1000; max-width: 90%; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .me-dot {
-  width: 16px; height: 16px; background: #2563eb; border: 3px solid #fff;
-  border-radius: 50%; box-shadow: 0 0 0 2px #2563eb;
+  width: 20px; height: 20px; background: #4285f4; border: 4px solid #fff;
+  border-radius: 50%; box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.3);
+  animation: pulse 2s infinite;
 }
 
-/* Custom green pin marker */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(66, 133, 244, 0.1); }
+  100% { box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.3); }
+}
+
+/* Google Maps-style red pin marker */
 .custom-pin {
   background: transparent !important;
   border: none !important;
 }
 .custom-pin svg {
   display: block;
-  width: 30px;
-  height: 42px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-  transition: transform 0.2s;
+  width: 32px;
+  height: 44px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.custom-pin svg:hover {
-  transform: scale(1.1);
+.custom-pin:hover svg {
+  transform: scale(1.15) translateY(-2px);
 }
 
-/* Layer control styling */
+/* Layer control styling - Google Maps style */
 .leaflet-control-layers {
   border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+  background: #fff !important;
+  border: none !important;
 }
 .leaflet-control-layers-toggle {
   width: 36px !important;
   height: 36px !important;
+  border-radius: 4px !important;
+}
+.leaflet-control-layers-base label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #202124;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.leaflet-control-layers-base label:hover {
+  background: #f1f3f4;
+}
+
+/* Zoom control styling */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+  border-radius: 8px !important;
+}
+.leaflet-control-zoom a {
+  background: #fff !important;
+  color: #5f6368 !important;
+  border: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: #f1f3f4 !important;
+  color: #202124 !important;
 }
 
 /* Route markers */
@@ -54,25 +124,253 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   z-index: 600 !important;
 }
 
+/* Google Maps-style bottom card */
 .card {
   position: fixed; left: 0; right: 0; bottom: 0; background: #fff;
-  border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 20px rgba(0,0,0,.2); z-index: 1001;
+  border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 24px rgba(0,0,0,.15); z-index: 1001;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 .card.hidden { display: none; }
-.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.card-title { font-weight: 700; font-size: 16px; line-height: 1.3; }
-.card-close { border: none; background: none; font-size: 18px; cursor: pointer; color: #888; padding: 0 4px; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.card-title { font-weight: 600; font-size: 18px; line-height: 1.4; color: #202124; }
+.card-close { 
+  border: none; background: none; font-size: 24px; cursor: pointer; color: #5f6368; 
+  padding: 0 8px; border-radius: 50%; transition: background 0.2s;
+}
+.card-close:hover { background: #f1f3f4; }
 .card-price { 
-  font-size: 24px; 
-  font-weight: 800; 
-  color: #16a34a; 
-  margin: 8px 0;
+  font-size: 28px; 
+  font-weight: 700; 
+  color: #188038; 
+  margin: 12px 0;
 }
-.card-meta { color: #444; font-size: 14px; margin: 6px 0 14px; }
-.card-actions { display: flex; gap: 10px; }
+.card-meta { color: #5f6368; font-size: 14px; margin: 8px 0 16px; }
+.card-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn {
-  flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px;
-  background: #f3f4f6; font-size: 15px; font-weight: 600; cursor: pointer; color: #111;
+  flex: 1; min-width: 120px; padding: 14px 16px; border: none; border-radius: 24px;
+  background: #f1f3f4; font-size: 15px; font-weight: 600; cursor: pointer; color: #202124;
+  transition: all 0.2s;
 }
-.btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.btn:hover { background: #e8eaed; }
+.btn-primary { 
+  background: #1a73e8; 
+  color: #fff; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+.btn-primary:hover { 
+  background: #1557b0; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.3);
+}
+
+/* Google Maps-style search bar */
+.search-container {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 1000;
+  max-width: 400px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  padding: 0 12px;
+  height: 48px;
+}
+
+.search-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  font-weight: 400;
+  color: #202124;
+  background: transparent;
+}
+
+.search-bar input::placeholder {
+  color: #70757a;
+}
+
+/* My location button */
+.location-btn {
+  position: fixed;
+  bottom: 100px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.location-btn:hover {
+  background: #f1f3f4;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.location-btn:active {
+  background: #e8eaed;
+  transform: scale(0.95);
+}
+
+/* Compass needle — Google Maps style.
+   Sits above the location button, hidden at north (rotation = 0),
+   appears via opacity + scale when the map is rotated.
+   The inner SVG counter-rotates to always point true north. */
+.compass-btn {
+  position: fixed;
+  bottom: 160px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  /* show/hide transition */
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.15s;
+}
+
+.compass-btn.compass-hidden {
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+}
+
+.compass-btn:hover {
+  background: #f1f3f4;
+}
+
+.compass-btn:active {
+  background: #e8eaed;
+  transform: scale(0.93);
+}
+
+/* The SVG needle itself rotates to counter the map rotation so it always faces north */
+.compass-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Google Maps-style map type selector */
+.map-type-container {
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.map-type-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.map-type-btn:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+}
+
+.map-type-btn:active {
+  background: #e8eaed;
+  transform: scale(0.95);
+}
+
+.map-type-icon {
+  pointer-events: none;
+  display: block;
+}
+
+.map-type-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  overflow: hidden;
+  min-width: 120px;
+  animation: fadeIn 0.2s ease;
+}
+
+.map-type-menu.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.map-type-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.map-type-option:last-child {
+  border-bottom: none;
+}
+
+.map-type-option:hover {
+  background: #f1f3f4;
+}
+
+.map-type-option.active {
+  background: #e8f0fe;
+  color: #1967d2;
+}
+
+.map-type-emoji {
+  font-size: 18px;
+}
+
+.map-type-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #202124;
+}
