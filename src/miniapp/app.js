@@ -10,6 +10,9 @@ const bot = params.get('bot') || '';
 const statusEl = document.getElementById('status');
 const cardEl = document.getElementById('card');
 const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+const searchDropdown = document.getElementById('searchDropdown');
+const searchContainer = document.getElementById('search-container');
 const myLocationBtn = document.getElementById('myLocationBtn');
 const compassBtn = document.getElementById('compassBtn');
 const mapTypeBtn = document.getElementById('mapTypeBtn');
@@ -190,12 +193,7 @@ function startMap() {
     mapTypeMenu.classList.toggle('hidden');
   });
 
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!mapTypeContainer.contains(e.target)) {
-      mapTypeMenu.classList.add('hidden');
-    }
-  });
+  // Close menu when clicking outside — handled in the unified document click above
 
   // Handle map type selection
   document.querySelectorAll('.map-type-option').forEach(option => {
@@ -231,10 +229,40 @@ function startMap() {
   // Set initial active state
   document.querySelector('.map-type-option[data-type="map"]').classList.add('active');
 
-  // Search functionality
-  searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    filterSpots(query);
+  // ── Search ────────────────────────────────────────────────────────────────
+  searchInput.addEventListener('focus', () => {
+    searchContainer.classList.add('focused');
+    if (searchInput.value.trim()) showDropdown(searchInput.value.trim());
+  });
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    searchClear.classList.toggle('hidden', q.length === 0);
+    if (q.length === 0) {
+      hideDropdown();
+      renderAllMarkers();
+    } else {
+      showDropdown(q);
+    }
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    hideDropdown();
+    searchInput.focus();
+    renderAllMarkers();
+  });
+
+  // Tap outside → close dropdown
+  document.addEventListener('click', (e) => {
+    if (!searchContainer.contains(e.target)) {
+      hideDropdown();
+      searchContainer.classList.remove('focused');
+    }
+    if (!mapTypeContainer.contains(e.target)) {
+      mapTypeMenu.classList.add('hidden');
+    }
   });
 
   // Telegram webviews often report the final viewport size only after the app
@@ -380,44 +408,93 @@ async function showDirections(s) {
   }
 }
 
-function filterSpots(query) {
-  // Clear existing markers
-  markers.forEach(marker => map.removeLayer(marker));
-  markers = [];
-  
-  // Filter spots based on search query
-  const filteredSpots = allSpots.filter(s => {
-    if (!query) return true;
-    const address = (s.address || '').toLowerCase();
-    return address.includes(query);
-  });
-  
-  // Add filtered markers
-  const bounds = [[lat, lng]];
-  let spotsAdded = 0;
-  
-  filteredSpots.forEach((s) => {
-    if (s.lat && s.lng) {
-      const marker = L.marker([s.lat, s.lng], { icon: priceIcon(s.price_per_hour) }).addTo(map);
-      
-      // Make pins tappable
-      marker.on('click', function() {
-        console.log('Spot clicked:', s);
-        showCard(s);
-      });
-      
-      markers.push(marker);
-      bounds.push([s.lat, s.lng]);
-      spotsAdded++;
-    }
-  });
-  
-  if (spotsAdded > 0) {
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+// ── Search helpers ────────────────────────────────────────────────────────
+
+function matchSpots(query) {
+  const q = query.toLowerCase();
+  return allSpots.filter(s => (s.address || '').toLowerCase().includes(q));
+}
+
+function showDropdown(query) {
+  searchContainer.classList.add('focused');
+  const matches = matchSpots(query);
+  searchDropdown.classList.remove('hidden');
+  searchDropdown.innerHTML = '';
+
+  if (matches.length === 0) {
+    searchDropdown.innerHTML = '<div class="search-no-results">No parking spots found</div>';
+    return;
   }
-  
-  setStatus(filteredSpots.length + ' spot(s) found');
-  setTimeout(() => setStatus(null), 2000);
+
+  matches.slice(0, 6).forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'search-suggestion';
+    const dist = s.distance_m != null ? fmtDist(s.distance_m) : '';
+    el.innerHTML = `
+      <div class="suggestion-pin">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <path fill="#ea4335" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+      </div>
+      <div class="suggestion-body">
+        <div class="suggestion-address">${highlight(s.address || 'Parking spot', query)}</div>
+        <div class="suggestion-meta">${dist}${dist ? ' · ' : ''}Parking</div>
+      </div>
+      <div class="suggestion-price">${s.price_per_hour} ETB/hr</div>`;
+
+    el.addEventListener('click', () => {
+      searchInput.value = s.address || '';
+      searchClear.classList.remove('hidden');
+      hideDropdown();
+      searchContainer.classList.remove('focused');
+      selectSpot(s);
+    });
+
+    searchDropdown.appendChild(el);
+  });
+}
+
+function hideDropdown() {
+  searchDropdown.classList.add('hidden');
+  searchDropdown.innerHTML = '';
+  searchContainer.classList.remove('focused');
+}
+
+// Wrap matched text in <strong> for highlighting
+function highlight(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return text.slice(0, idx) +
+    '<strong>' + text.slice(idx, idx + query.length) + '</strong>' +
+    text.slice(idx + query.length);
+}
+
+// Fly to a spot, highlight its marker, open its card
+function selectSpot(s) {
+  map.setView([s.lat, s.lng], 17, { animate: true });
+  const marker = markers.find(m => m._spotId === s.id);
+  if (marker) {
+    marker.openPopup();
+  }
+  showCard(s);
+}
+
+// Render all spots back (clear search)
+function renderAllMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  if (!allSpots.length) return;
+  const bounds = [[lat, lng]];
+  allSpots.forEach(s => {
+    if (!s.lat || !s.lng) return;
+    const marker = L.marker([s.lat, s.lng], { icon: priceIcon(s.price_per_hour) }).addTo(map);
+    marker._spotId = s.id;
+    marker.on('click', () => showCard(s));
+    markers.push(marker);
+    bounds.push([s.lat, s.lng]);
+  });
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
 }
 
 async function loadSpots() {
@@ -427,47 +504,22 @@ async function loadSpots() {
       headers: { 'ngrok-skip-browser-warning': 'true' },
     });
     const d = await r.json();
-    
-    if (!d.spots || !d.spots.length) { 
-      setStatus('No parking spots found nearby.'); 
-      return; 
+
+    if (!d.spots || !d.spots.length) {
+      setStatus('No parking spots found nearby.');
+      return;
     }
 
-    // Store all spots for filtering
     allSpots = d.spots;
-    setStatus(null); // Clear loading message
-    const bounds = [[lat, lng]];
-    let spotsAdded = 0;
-    
-    d.spots.forEach((s) => {
-      if (s.lat && s.lng) {
-        const marker = L.marker([s.lat, s.lng], { icon: priceIcon(s.price_per_hour) }).addTo(map);
-        
-        // Make pins tappable
-        marker.on('click', function() {
-          console.log('Spot clicked:', s);
-          showCard(s);
-        });
-        
-        markers.push(marker);
-        bounds.push([s.lat, s.lng]);
-        spotsAdded++;
-      }
-    });
-    
-    if (spotsAdded > 0) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-      setStatus('Tap a pin to view details');
+    setStatus(null);
+    renderAllMarkers();
+
+    if (d.fallback) {
+      setStatus('Showing nearest spots (none within range)');
       setTimeout(() => setStatus(null), 3000);
     } else {
-      setStatus('No spots with valid coordinates');
-    }
-    
-    if (d.fallback) {
-      setTimeout(() => {
-        setStatus('Nearest spots (none within range)');
-        setTimeout(() => setStatus(null), 3000);
-      }, 3000);
+      setStatus('Tap a pin to view details');
+      setTimeout(() => setStatus(null), 3000);
     }
   } catch (e) {
     console.error('Failed to load spots:', e);
