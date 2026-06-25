@@ -1,11 +1,12 @@
 services:
+  # PostgreSQL Database with PostGIS
   db:
     image: postgis/postgis:16-3.4
     container_name: parking-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: parking
-      POSTGRES_PASSWORD: parking
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-parking}
       POSTGRES_DB: parking
     ports:
       # Host 5433 → container 5432 (host 5432 is taken by a native Postgres)
@@ -17,6 +18,43 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - parking-net
+
+  # ParkAddis Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parking-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgres://parking:${DB_PASSWORD:-parking}@db:5432/parking
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - parking-net
 
 volumes:
   parking_pgdata:
+
+networks:
+  parking-net:
+    driver: bridge

@@ -84,7 +84,8 @@ CREATE OR REPLACE FUNCTION create_booking(
   p_end         TIMESTAMPTZ,
   p_total_price NUMERIC,
   p_conf_code   TEXT,
-  p_status      booking_status DEFAULT 'reserved'
+  p_status      booking_status DEFAULT 'reserved',
+  p_payment_status payment_status DEFAULT 'unpaid'
 )
 RETURNS BIGINT AS $$
 DECLARE
@@ -112,7 +113,7 @@ BEGIN
   INSERT INTO bookings (driver_id, spot_id, start_time, end_time,
                         status, total_price, payment_status, confirmation_code)
   VALUES (p_driver_id, p_spot_id, p_start, p_end,
-          p_status, p_total_price, 'unpaid', p_conf_code)
+          p_status, p_total_price, p_payment_status, p_conf_code)
   RETURNING id INTO v_new_id;
 
   RETURN v_new_id;
