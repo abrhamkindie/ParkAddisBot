@@ -6,7 +6,7 @@ import { confirmPayment } from './bookingService.js';
 import { calcSplit } from './pricing.js';
 import { checkinQrPng } from '../utils/qr.js';
 import { checkinLink } from '../utils/deeplink.js';
-import { formatMoney, currency, formatDateTime } from '../utils/format.js';
+import { formatMoney, currency, formatDateTime, mdEscape } from '../utils/format.js';
 import { InputFile } from 'grammy';
 import { getTranslator } from '../i18n/index.js';
 import { logger } from '../utils/logger.js';
@@ -45,7 +45,8 @@ export async function initiatePayment({ bookingId, method = 'chapa', ctx }) {
       customerEmail: ctx?.from?.username ? `${ctx.from.username}@gmail.com` : undefined,
       customerPhone: ctx?.dbUser?.phone,
       callbackUrl: `${config.publicUrl}/api/payments/chapa/webhook`,
-      returnUrl: `${config.publicUrl}/payment/success`,
+      // After payment, redirect the user back to the Telegram bot chat
+      returnUrl: `https://t.me/${config.botUsername}`,
     });
 
     // Create payment record
@@ -164,16 +165,16 @@ export async function sendPaymentReceipt(ctx, booking, payment) {
     `🧾 ${t('payment.receipt_caption')}\n` +
     `━━━━━━━━━━━━━━━━━━\n` +
     `💳 ${t('payment.method')}: ${methodLabel}\n` +
-    `🔖 ${t('payment.reference')}: ${payment.reference}\n` +
+    `🔖 ${t('payment.reference')}: ${mdEscape(payment.reference)}\n` +
     `💰 ${t('payment.amount')}: ${formatMoney(payment.amount)} ${currency}\n` +
     `━━━━━━━━━━━━━━━━━━\n\n` +
     `${t('booking.reserved_body', {
-      code: booking.confirmation_code,
-      address: booking.address || '—',
-      start: formatDateTime(booking.start_time),
-      end: formatDateTime(booking.end_time),
-      total: formatMoney(booking.total_price),
-      currency,
+      code: mdEscape(booking.confirmation_code),
+      address: mdEscape(booking.address || '—'),
+      start: mdEscape(formatDateTime(booking.start_time)),
+      end: mdEscape(formatDateTime(booking.end_time)),
+      total: mdEscape(formatMoney(booking.total_price)),
+      currency: mdEscape(currency),
     })}\n\n` +
     `_${t('payment.qr_instruction')}_`;
 
@@ -186,12 +187,12 @@ export async function sendPaymentReceipt(ctx, booking, payment) {
       const png = await checkinQrPng(checkinLink(booking.checkin_token));
       await ctx.replyWithPhoto(new InputFile(png, 'checkin.png'), {
         caption: t('booking.qr_caption', {
-          address: booking.address || '—',
-          start: formatDateTime(booking.start_time),
-          end: formatDateTime(booking.end_time),
-          total: formatMoney(booking.total_price),
-          currency,
-          code: booking.confirmation_code,
+          address: mdEscape(booking.address || '—'),
+          start: mdEscape(formatDateTime(booking.start_time)),
+          end: mdEscape(formatDateTime(booking.end_time)),
+          total: mdEscape(formatMoney(booking.total_price)),
+          currency: mdEscape(currency),
+          code: mdEscape(booking.confirmation_code),
         }),
         parse_mode: 'Markdown',
       });

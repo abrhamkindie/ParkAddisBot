@@ -37,6 +37,7 @@ export async function initializePayment({
     tx_ref: txRef,
     callback_url: callbackUrl || `${config.publicUrl}/api/payments/chapa/webhook`,
     return_url: returnUrl || `${config.publicUrl}/payment/success`,
+    // Note: paymentService.js overrides returnUrl to redirect to Telegram bot
     customization: {
       title: 'ParkAddis',
       description: `Booking ${bookingId}`,
@@ -94,7 +95,7 @@ export async function verifyPayment(txRef) {
   }
 
   try {
-    const response = await fetch(`${CHAPA_BASE_URL}/transactions/verify/${txRef}`, {
+    const response = await fetch(`${CHAPA_BASE_URL}/transaction/verify/${txRef}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${config.chapa.secretKey}`,
