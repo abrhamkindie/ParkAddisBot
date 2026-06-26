@@ -12,7 +12,7 @@ import { formatDateTime } from '../../utils/format.js';
 import { logger } from '../../utils/logger.js';  import { botAsyncHandler } from '../utils/botError.js';
 import { Flow, clearFlowSession, getFlowSession, setFlowSession } from '../utils/session.js';
 
-function createStarKeyboard(bookingId) {
+function createStarKeyboard(t, bookingId) {
   const kb = new InlineKeyboard();
   kb.text('5 ⭐', `rate:score:${bookingId}:5`)
     .text('4 ⭐', `rate:score:${bookingId}:4`)
@@ -21,7 +21,7 @@ function createStarKeyboard(bookingId) {
   kb.text('2 ⭐', `rate:score:${bookingId}:2`)
     .text('1 ⭐', `rate:score:${bookingId}:1`);
   kb.row();
-  kb.text('🚫 ' + 'Maybe later', 'rate:dismiss');
+  kb.text(`🚫 ${t('rating.dismiss')}`, 'rate:dismiss');
   return kb;
 }
 
@@ -45,7 +45,7 @@ async function showRatingPrompt(ctx, bookingId) {
   await ctx.reply(
     `⭐ **${t('rating.prompt_title')}**\n\n${t('rating.prompt_body', { address })}`,
     {
-      reply_markup: createStarKeyboard(bookingId),
+      reply_markup: createStarKeyboard(t, bookingId),
       parse_mode: 'Markdown',
     }
   );
@@ -66,7 +66,7 @@ async function showCommentPrompt(ctx, bookingId, score) {
     1: t('rating.stars_1'),
   };
 
-  const kb = new InlineKeyboard().text('⏭️ ' + t('rating.skip'), `rate:comment:skip`);
+  const kb = new InlineKeyboard().text(`⏭️ ${t('rating.skip')}`, `rate:comment:skip`);
 
   await ctx.reply(
     `${starLabels[score]}\n\n${t('rating.ask_comment')}`,
@@ -219,7 +219,7 @@ export async function triggerRatingPrompt(ctx, bookingId) {
       Number(booking.driver_telegram_id),
       `⭐ **${dt('rating.prompt_title')}**\n\n${dt('rating.prompt_body', { address: booking.address || '—' })}`,
       {
-        reply_markup: createStarKeyboard(bookingId),
+        reply_markup: createStarKeyboard(dt, bookingId),
         parse_mode: 'Markdown',
       }
     );

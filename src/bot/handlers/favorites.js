@@ -29,9 +29,9 @@ export function registerFavorites(bot) {
     await ctx.editMessageText(text, {
       reply_markup: {
         inline_keyboard: favorites.map(f => [
-          { text: `${f.address}`, callback_data: `spot:view:${f.id}` },
+          { text: `📍 ${f.address}`, callback_data: `spot:view:${f.id}` },
         ]).concat([[
-          { text: ctx.t('common.back'), callback_data: 'menu:back' },
+          { text: ctx.t('common.back'), callback_data: 'nearby:back' },
         ]]),
       },
     });

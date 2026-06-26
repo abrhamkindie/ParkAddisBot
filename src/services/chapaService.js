@@ -26,16 +26,20 @@ export async function initializePayment({
 
   const txRef = generateTxRef(bookingId);
 
+  // Use a unique email per transaction to avoid Chapa's strict domain validation.
+  // Well-known domains like @gmail.com pass; custom domains (@parkaddis.com) fail.
+  const safeEmail = customerEmail || `driver_${bookingId}_${Date.now()}@gmail.com`;
+
   const payload = {
     amount: String(amount),
     currency,
-    email: customerEmail || 'customer@parkaddis.com',
+    email: safeEmail,
     tx_ref: txRef,
     callback_url: callbackUrl || `${config.publicUrl}/api/payments/chapa/webhook`,
     return_url: returnUrl || `${config.publicUrl}/payment/success`,
     customization: {
-      title: 'ParkAddis Parking',
-      description: `Parking reservation #${bookingId}`,
+      title: 'ParkAddis',
+      description: `Booking ${bookingId}`,
     },
   };
 
@@ -44,7 +48,7 @@ export async function initializePayment({
   }
 
   try {
-    const response = await fetch(`${CHAPA_BASE_URL}/checkout`, {
+    const response = await fetch(`${CHAPA_BASE_URL}/transaction/initialize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +65,13 @@ export async function initializePayment({
         data,
         txRef,
       });
-      throw new Error(data.message || 'Failed to initialize Chapa payment');
+      // Chapa may return message as a string or an object — normalize it
+      const errorMsg = typeof data.message === 'string'
+        ? data.message
+        : data.message && typeof data.message === 'object'
+          ? JSON.stringify(data.message)
+          : 'Chapa payment could not be initiated';
+      throw new Error(errorMsg);
     }
 
     logger.info('Chapa payment initialized', { txRef, checkoutUrl: data.data.checkout_url });

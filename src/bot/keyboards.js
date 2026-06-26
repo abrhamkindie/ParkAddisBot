@@ -50,7 +50,7 @@ export function areaBrowserKeyboard() {
   const kb = new InlineKeyboard();
   AREAS.forEach((area, i) => {
     kb.text(area.label, `browse:area:${area.key}`);
-    if (i % 2 === 1) kb.row();
+    if (i % 3 === 2) kb.row();
   });
   return kb;
 }
@@ -83,10 +83,11 @@ export function nearbyResultsKeyboard(t, spots, { miniAppUrl } = {}) {
 
 // Spot detail actions.
 export function spotDetailKeyboard(t, spot) {
-  const kb = new InlineKeyboard().text(t('spot.book_now'), `book:start:${spot.id}`).row();
+  const kb = new InlineKeyboard();
   if (spot.lat != null && spot.lng != null) {
-    kb.url(t('common.directions'), directionsUrl(spot.lat, spot.lng)).row();
+    kb.url(t('common.directions'), directionsUrl(spot.lat, spot.lng));
   }
+  kb.text(t('spot.book_now'), `book:start:${spot.id}`).row();
   kb.text(t('common.back'), 'nearby:back');
   return kb;
 }
@@ -115,9 +116,9 @@ export function cancelKeyboard(t) {
 // Inline quick-pick for capacity (typing a number also works).
 export function capacityKeyboard(t) {
   const kb = new InlineKeyboard();
-  [1, 2, 3].forEach((n) => kb.text(String(n), `host:cap:${n}`));
+  [1, 2, 3, 4, 5].forEach((n) => kb.text(String(n), `host:cap:${n}`));
   kb.row();
-  [5, 10].forEach((n) => kb.text(String(n), `host:cap:${n}`));
+  [10, 20, 50].forEach((n) => kb.text(String(n), `host:cap:${n}`));
   return kb;
 }
 
