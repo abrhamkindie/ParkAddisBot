@@ -1,3 +1,9 @@
+/**
+ * My Bookings handler — list recent bookings and show QR codes.
+ *
+ * @module bot/handlers/bookingsList
+ */
+
 import { InlineKeyboard, InputFile } from 'grammy';
 import * as bookingsRepo from '../../db/repositories/bookings.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
@@ -6,12 +12,13 @@ import { allTranslations } from '../../i18n/index.js';
 import { checkinQrPng } from '../../utils/qr.js';
 import { checkinLink } from '../../utils/deeplink.js';
 import { logger } from '../../utils/logger.js';
+import { botAsyncHandler } from '../utils/botError.js';
 
 const QR_STATUSES = new Set(['reserved', 'confirmed', 'active']);
 
 // "My bookings" menu button → list recent bookings for this driver.
 export function registerBookingsList(bot) {
-  bot.hears(allTranslations('menu.my_bookings'), async (ctx) => {
+  bot.hears(allTranslations('menu.my_bookings'), botAsyncHandler(async (ctx) => {
     const t = ctx.t;
     const rows = await bookingsRepo.listByDriver(ctx.dbUser.id, 10);
     if (!rows.length) return ctx.reply(t('booking.none'));
@@ -38,10 +45,10 @@ export function registerBookingsList(bot) {
     const hasButtons = kb.inline_keyboard.length > 0;
 
     await ctx.reply(items.join('\n\n'), hasButtons ? { reply_markup: kb } : undefined);
-  });
+  }));
 
   // Re-send a booking's QR (driver-only).
-  bot.callbackQuery(/^booking:qr:(\d+)$/, async (ctx) => {
+  bot.callbackQuery(/^booking:qr:(\d+)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const id = Number(ctx.match[1]);
     const b = await bookingsRepo.getById(id);
@@ -66,5 +73,5 @@ export function registerBookingsList(bot) {
       logger.warn('show qr failed', { error: err.message });
       await ctx.reply(ctx.t('common.error_generic'));
     }
-  });
+  }));
 }

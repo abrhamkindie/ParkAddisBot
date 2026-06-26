@@ -1,9 +1,16 @@
+/**
+ * Rating handlers — submit scores, comments, and view reviews.
+ *
+ * @module bot/handlers/rating
+ */
+
 import { InlineKeyboard } from 'grammy';
 import { submitRating, canRateBooking, RatingError } from '../../services/ratingService.js';
 import * as ratingsRepo from '../../db/repositories/ratings.js';
 import * as bookingsRepo from '../../db/repositories/bookings.js';
 import { formatDateTime } from '../../utils/format.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/logger.js';  import { botAsyncHandler } from '../utils/botError.js';
+import { Flow, clearFlowSession, getFlowSession, setFlowSession } from '../utils/session.js';
 
 function createStarKeyboard(bookingId) {
   const kb = new InlineKeyboard();
@@ -49,7 +56,7 @@ async function showCommentPrompt(ctx, bookingId, score) {
   const t = ctx.t;
 
   // Store score in session
-  ctx.session.rateState = { bookingId, score };
+  setFlowSession(ctx.from.id, { flow: Flow.RATING, bookingId, score });
 
   const starLabels = {
     5: t('rating.stars_5'),
@@ -69,39 +76,23 @@ async function showCommentPrompt(ctx, bookingId, score) {
 
 // Submit rating with optional comment.
 async function submitRatingFlow(ctx, bookingId, score, comment) {
-  const t = ctx.t;
+  const { rating } = await submitRating({
+    bookingId,
+    driverId: ctx.from.id,
+    score,
+    comment,
+  });
 
-  try {
-    const { rating } = await submitRating({
-      bookingId,
-      driverId: ctx.from.id,
-      score,
-      comment,
-    });
+  await ctx.reply(
+    `✅ **${ctx.t('rating.submitted')}**\n\n⭐ **${score}/5**`,
+    { parse_mode: 'Markdown' }
+  );
 
-    await ctx.reply(
-      `✅ **${t('rating.submitted')}**\n\n⭐ **${score}/5**`,
-      { parse_mode: 'Markdown' }
-    );
-
-    logger.info('Rating submitted via bot', {
-      bookingId,
-      driverId: ctx.from.id,
-      score,
-    });
-  } catch (err) {
-    if (err instanceof RatingError) {
-      const messages = {
-        ALREADY_RATED: t('rating.already_rated'),
-        BOOKING_NOT_COMPLETED: t('rating.booking_not_completed'),
-        BOOKING_NOT_FOUND: t('common.error_generic'),
-        INVALID_SCORE: t('common.error_generic'),
-      };
-      return ctx.reply(messages[err.code] || t('rating.error_generic'));
-    }
-    logger.error('Rating submission failed', { error: err.message });
-    return ctx.reply(t('rating.error_generic'));
-  }
+  logger.info('Rating submitted via bot', {
+    bookingId,
+    driverId: ctx.from.id,
+    score,
+  });
 }
 
 // View reviews for a spot.
@@ -151,61 +142,60 @@ async function viewReviews(ctx, spotId) {
 // Register rating handlers.
 export function registerRating(bot) {
   // Show rating prompt
-  bot.callbackQuery(/^rate:prompt:(\d+)$/, async (ctx) => {
+  bot.callbackQuery(/^rate:prompt:(\d+)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const bookingId = Number(ctx.match[1]);
     await showRatingPrompt(ctx, bookingId);
-  });
+  }));
 
   // User selected a score
-  bot.callbackQuery(/^rate:score:(\d+):(\d)$/, async (ctx) => {
+  bot.callbackQuery(/^rate:score:(\d+):(\d)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const bookingId = Number(ctx.match[1]);
     const score = Number(ctx.match[2]);
     await showCommentPrompt(ctx, bookingId, score);
-  });
+  }));
 
   // Skip comment
-  bot.callbackQuery(/^rate:comment:skip$/, async (ctx) => {
+  bot.callbackQuery(/^rate:comment:skip$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
-
-    if (!ctx.session.rateState) {
-      return ctx.reply(t('common.error_generic'));
+    const session = getFlowSession(ctx.from.id);
+    if (!session || session.flow !== Flow.RATING) {
+      return ctx.reply(ctx.t('common.error_generic'));
     }
-
-    const { bookingId, score } = ctx.session.rateState;
-    delete ctx.session.rateState;
-
+    const { bookingId, score } = session;
+    clearFlowSession(ctx.from.id);
     await submitRatingFlow(ctx, bookingId, score, null);
-  });
+  }));
 
   // Dismiss rating prompt
-  bot.callbackQuery(/^rate:dismiss$/, async (ctx) => {
+  bot.callbackQuery(/^rate:dismiss$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
-    delete ctx.session.rateState;
+    clearFlowSession(ctx.from.id);
     await ctx.reply(ctx.t('rating.dismiss'));
-  });
+  }));
 
   // View reviews for a spot
-  bot.callbackQuery(/^rating:reviews:(\d+)$/, async (ctx) => {
+  bot.callbackQuery(/^rating:reviews:(\d+)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const spotId = Number(ctx.match[1]);
     await viewReviews(ctx, spotId);
-  });
+  }));
 
   // Handle comment text (when waiting for comment)
-  bot.on('message:text', async (ctx, next) => {
+  bot.on('message:text', botAsyncHandler(async (ctx, next) => {
     // Only process if in rating flow
-    if (!ctx.session.rateState || !ctx.session.rateState.bookingId) {
+    const session = getFlowSession(ctx.from.id);
+    if (!session || session.flow !== Flow.RATING || !session.bookingId) {
       return next();
     }
 
-    const { bookingId, score } = ctx.session.rateState;
+    const { bookingId, score } = session;
+    clearFlowSession(ctx.from.id);
     const comment = ctx.message.text;
-    delete ctx.session.rateState;
 
     await submitRatingFlow(ctx, bookingId, score, comment);
-  });
+  }));
 }
 
 // Export function to trigger rating prompt (used by checkin handler).

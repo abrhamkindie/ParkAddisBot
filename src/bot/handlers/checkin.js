@@ -1,20 +1,16 @@
+/**
+ * Check-in handlers — spot check-in and completion.
+ *
+ * @module bot/handlers/checkin
+ */
+
 import { InlineKeyboard } from 'grammy';
 import { checkIn, complete, CheckinError } from '../../services/checkinService.js';
 import { triggerRatingPrompt } from './rating.js';
 import { getTranslator } from '../../i18n/index.js';
 import { formatDateTime, formatMoney, currency } from '../../utils/format.js';
 import { logger } from '../../utils/logger.js';
-
-function errMessage(t, code) {
-  switch (code) {
-    case 'NOT_FOUND': return t('checkin.err_not_found');
-    case 'NOT_OWNER': return t('checkin.err_not_owner');
-    case 'ALREADY_CHECKED_IN': return t('checkin.err_already');
-    case 'INVALID_STATE': return t('checkin.err_invalid_state');
-    case 'EXPIRED': return t('checkin.err_expired');
-    default: return t('common.error_generic');
-  }
-}
+import { BotError, BotErrorCode, botAsyncHandler, translateError } from '../utils/botError.js';
 
 // Entry from start.js when the /start payload is checkin_<token>.
 export async function handleCheckin(ctx, token) {
@@ -27,7 +23,7 @@ export async function handleCheckin(ctx, token) {
       token,
     }));
   } catch (err) {
-    if (err instanceof CheckinError) return ctx.reply(errMessage(t, err.code));
+    if (err instanceof CheckinError) return ctx.reply(translateError(t, `CHECKIN_${err.code}`));
     logger.error('checkin failed', { error: err.message });
     return ctx.reply(t('common.error_generic'));
   }
@@ -58,26 +54,18 @@ export async function handleCheckin(ctx, token) {
 }
 
 export function registerCheckin(bot) {
-  bot.callbackQuery(/^checkin:complete:(\d+)$/, async (ctx) => {
+  bot.callbackQuery(/^checkin:complete:(\d+)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const bookingId = Number(ctx.match[1]);
-    try {
-      await complete({
-        bookingId,
-        scannerTelegramId: ctx.from.id,
-        scannerRole: ctx.dbUser?.role,
-      });
-      await ctx.reply(ctx.t('checkin.completed_owner'));
 
-      // Trigger rating prompt to driver
-      await triggerRatingPrompt(ctx, bookingId);
-    } catch (err) {
-      if (err instanceof CheckinError) {
-        const msg = err.code === 'NOT_OWNER' ? ctx.t('checkin.err_not_owner') : ctx.t('checkin.not_completable');
-        return ctx.reply(msg);
-      }
-      logger.error('complete failed', { error: err.message });
-      return ctx.reply(ctx.t('common.error_generic'));
-    }
-  });
+    await complete({
+      bookingId,
+      scannerTelegramId: ctx.from.id,
+      scannerRole: ctx.dbUser?.role,
+    });
+    await ctx.reply(ctx.t('checkin.completed_owner'));
+
+    // Trigger rating prompt to driver
+    await triggerRatingPrompt(ctx, bookingId);
+  }));
 }

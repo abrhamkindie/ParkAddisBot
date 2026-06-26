@@ -1,11 +1,18 @@
+/**
+ * Nearby parking handlers — location search, area browse, spot details.
+ *
+ * @module bot/handlers/nearby
+ */
+
 import { InputFile } from 'grammy';
 import { config } from '../../config/index.js';
 import * as spotsRepo from '../../db/repositories/spots.js';
 import { shareLocationKeyboard, nearbyResultsKeyboard, spotDetailKeyboard, areaBrowserKeyboard, AREAS } from '../keyboards.js';
-import { spotLine, spotDetail, buildMapCaption } from '../views/spot.js';
+import { spotLine, spotDetail } from '../views/spot.js';
 import { renderNearbyMap } from '../../utils/staticMap.js';
 import { allTranslations } from '../../i18n/index.js';
 import { logger } from '../../utils/logger.js';
+import { botAsyncHandler } from '../utils/botError.js';
 
 // Build a Mini App map URL with the user's coords. Returns null unless a
 // PUBLIC_URL https origin is configured (Telegram requires https). Carries the
@@ -32,10 +39,10 @@ async function presentList(ctx, lat, lng, spots, headerText) {
 // tap pins to view details and book spots.
 async function presentResults(ctx, lat, lng, spots, headerText) {
   const t = ctx.t;
-  
+
   // Try to send the interactive miniapp map
   const appUrl = miniAppUrl(lat, lng);
-  
+
   if (appUrl) {
     // Send as a WebApp button for interactive map experience
     logger.info('Sending interactive map via WebApp', { spotCount: spots.length });
@@ -56,9 +63,9 @@ async function presentResults(ctx, lat, lng, spots, headerText) {
       });
       logger.info('Static map sent successfully');
     } catch (err) {
-      logger.warn('Map render failed, falling back to list', { 
+      logger.warn('Map render failed, falling back to list', {
         error: err.message,
-        stack: err.stack 
+        stack: err.stack
       });
       await presentList(ctx, lat, lng, spots, headerText);
     }
@@ -114,29 +121,22 @@ async function askForLocation(ctx) {
 
 export function registerNearby(bot) {
   // "Find parking" menu button → ask for location.
-  bot.hears(allTranslations('menu.find_parking'), askForLocation);
+  bot.hears(allTranslations('menu.find_parking'), botAsyncHandler(askForLocation));
 
   // Inline "Find parking" CTA (from the welcome message) → same prompt.
-  bot.callbackQuery('nearby:find', async (ctx) => {
+  bot.callbackQuery('nearby:find', botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     await askForLocation(ctx);
-  });
+  }));
 
-  // Any shared location (live or static) triggers a search. Final safety net so a
-  // failure deep in the search/render path can never leave the user staring at
-  // "Searching…" with no reply.
-  bot.on('message:location', async (ctx) => {
+  // Any shared location (live or static) triggers a search.
+  bot.on('message:location', botAsyncHandler(async (ctx) => {
     const { latitude, longitude } = ctx.msg.location;
-    try {
-      await runSearch(ctx, latitude, longitude);
-    } catch (err) {
-      logger.error('runSearch failed', { error: err.message });
-      await ctx.reply(ctx.t('common.error_generic')).catch(() => {});
-    }
-  });
+    await runSearch(ctx, latitude, longitude);
+  }));
 
   // Tap a spot in the result list → show details.
-  bot.callbackQuery(/^spot:view:(\d+)$/, async (ctx) => {
+  bot.callbackQuery(/^spot:view:(\d+)$/, botAsyncHandler(async (ctx) => {
     const spotId = Number(ctx.match[1]);
     const spot = await spotsRepo.getById(spotId);
     await ctx.answerCallbackQuery();
@@ -150,17 +150,17 @@ export function registerNearby(bot) {
     if (spot.lat != null && spot.lng != null) {
       await ctx.replyWithLocation(spot.lat, spot.lng);
     }
-  });
+  }));
 
   // "Browse by area" menu button → show area picker (no location needed).
-  bot.hears(allTranslations('menu.browse_areas'), async (ctx) => {
+  bot.hears(allTranslations('menu.browse_areas'), botAsyncHandler(async (ctx) => {
     await ctx.reply(ctx.t('browse.pick_area'), {
       reply_markup: areaBrowserKeyboard(),
     });
-  });
+  }));
 
   // User picked a neighbourhood area.
-  bot.callbackQuery(/^browse:area:(.+)$/, async (ctx) => {
+  bot.callbackQuery(/^browse:area:(.+)$/, botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     const key = ctx.match[1];
     const area = AREAS.find((a) => a.key === key);
@@ -180,11 +180,11 @@ export function registerNearby(bot) {
 
     const header = ctx.t('browse.results_header', { area: area.label, count: spots.length });
     await presentResults(ctx, area.lat, area.lng, spots, header);
-  });
+  }));
 
   // "Back" from a spot detail — just acknowledge; the result list is still above.
-  bot.callbackQuery('nearby:back', async (ctx) => {
+  bot.callbackQuery('nearby:back', botAsyncHandler(async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.editMessageReplyMarkup().catch(() => {});
-  });
+  }));
 }
