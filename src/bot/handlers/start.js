@@ -1,11 +1,18 @@
+/**
+ * Start and help command handlers.
+ *
+ * @module bot/handlers/start
+ */
+
 import { config } from '../../config/index.js';
 import { languageKeyboard, mainMenuKeyboard, welcomeKeyboard } from '../keyboards.js';
 import { handleCheckin } from './checkin.js';
 import { beginBooking } from './booking.js';
+import { botAsyncHandler } from '../utils/botError.js';
 
 // /start — if the user has no explicit language yet, ask; otherwise greet.
 export function registerStart(bot) {
-  bot.command('start', async (ctx) => {
+  bot.command('start', botAsyncHandler(async (ctx) => {
     const payload = typeof ctx.match === 'string' ? ctx.match.trim() : '';
     if (payload.startsWith('checkin_')) {
       return handleCheckin(ctx, payload.slice('checkin_'.length));
@@ -24,14 +31,14 @@ export function registerStart(bot) {
       return;
     }
     await sendMainMenu(ctx, { returning: true });
-  });
+  }));
 
   // Help command + menu button.
-  bot.command('help', async (ctx) => {
+  bot.command('help', botAsyncHandler(async (ctx) => {
     await ctx.reply(ctx.t('help.text', { app: config.appName }), {
       reply_markup: mainMenuKeyboard(ctx.t),
     });
-  });
+  }));
 }
 
 // Sends the welcome + persistent main menu. For returning users we use a shorter

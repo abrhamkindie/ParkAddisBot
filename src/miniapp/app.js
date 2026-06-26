@@ -496,16 +496,19 @@ async function loadSpots() {
     });
     const d = await r.json();
 
-    if (!d.spots || !d.spots.length) {
+    // API wraps response in { success, data: { fallback, spots } }
+    const payload = d.data || d;
+
+    if (!payload.spots || !payload.spots.length) {
       setStatus('No parking spots found nearby.');
       return;
     }
 
-    allSpots = d.spots;
+    allSpots = payload.spots;
     setStatus(null);
     renderAllMarkers();
 
-    if (d.fallback) {
+    if (payload.fallback) {
       setStatus('Showing nearest spots (none within range)');
       setTimeout(() => setStatus(null), 3000);
     } else {
