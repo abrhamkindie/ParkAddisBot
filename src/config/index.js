@@ -26,7 +26,28 @@
  * @property {object} config.logging - Log level & format
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { readFileSync } from 'node:fs';
+
+// Load .env file (does NOT override existing env vars by default)
+dotenv.config();
+
+// Fix: if CHAPA vars exist as empty strings in the shell environment (e.g.
+// from a previous incomplete setup), dotenv won't overwrite them. Read just
+// these vars directly from .env without touching anything else.
+if (!process.env.CHAPA_SECRET_KEY || !process.env.CHAPA_WEBHOOK_SECRET) {
+  try {
+    const envRaw = dotenv.parse(readFileSync('.env', 'utf8'));
+    if (!process.env.CHAPA_SECRET_KEY && envRaw.CHAPA_SECRET_KEY) {
+      process.env.CHAPA_SECRET_KEY = envRaw.CHAPA_SECRET_KEY;
+    }
+    if (!process.env.CHAPA_WEBHOOK_SECRET && envRaw.CHAPA_WEBHOOK_SECRET) {
+      process.env.CHAPA_WEBHOOK_SECRET = envRaw.CHAPA_WEBHOOK_SECRET;
+    }
+  } catch {
+    // .env file missing or unreadable — fall through gracefully
+  }
+}
 import { z } from 'zod';
 
 // ── Zod schema for the full config ────────────────────────────────────────

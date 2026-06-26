@@ -5,6 +5,7 @@
  */
 
 import * as usersRepo from '../../db/repositories/users.js';
+import { config } from '../../config/index.js';
 import { getTranslator, SUPPORTED_LANGS, allTranslations } from '../../i18n/index.js';
 import { languageKeyboard } from '../keyboards.js';
 import { sendMainMenu } from './start.js';
@@ -13,7 +14,9 @@ import { botAsyncHandler } from '../utils/botError.js';
 export function registerLanguage(bot) {
   // Open the language picker from the menu button.
   bot.hears(allTranslations('menu.language'), botAsyncHandler(async (ctx) => {
-    await ctx.reply(ctx.t('language.changed'), { reply_markup: languageKeyboard(ctx.t) });
+    await ctx.reply(ctx.t('start.choose_language', { app: config.appName }), {
+      reply_markup: languageKeyboard(ctx.t),
+    });
   }));
 
   // Handle lang:en / lang:am callbacks.

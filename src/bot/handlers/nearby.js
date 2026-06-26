@@ -28,10 +28,10 @@ function miniAppUrl(lat, lng) {
 
 // Fallback when the map image can't be rendered (e.g. tiles unreachable): the
 // classic numbered text list with the same Book/Directions/map buttons.
-async function presentList(ctx, lat, lng, spots, headerText) {
+async function presentList(ctx, spots, headerText) {
   const body = spots.map((s, i) => spotLine(ctx.t, s, i)).join('\n');
   await ctx.reply(`${headerText}\n\n${body}`, {
-    reply_markup: resultsKeyboard(ctx.t, lat, lng, spots),
+    reply_markup: nearbyResultsKeyboard(ctx.t, spots),
   });
 }
 
@@ -59,7 +59,8 @@ async function presentResults(ctx, lat, lng, spots, headerText) {
     try {
       const png = await renderNearbyMap({ lat, lng, spots });
       await ctx.replyWithPhoto(new InputFile(png, 'nearby.png'), {
-        caption: `${headerText}\n\nNote: Configure PUBLIC_URL with HTTPS for interactive map.`,
+        caption: `${headerText}\n\n🗺️ *ParkAddis — Interactive Map*`,
+        parse_mode: 'Markdown',
       });
       logger.info('Static map sent successfully');
     } catch (err) {
@@ -67,7 +68,7 @@ async function presentResults(ctx, lat, lng, spots, headerText) {
         error: err.message,
         stack: err.stack
       });
-      await presentList(ctx, lat, lng, spots, headerText);
+      await presentList(ctx, spots, headerText);
     }
   }
 }

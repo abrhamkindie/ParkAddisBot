@@ -10,6 +10,7 @@ import { formatMoney, currency, formatDateTime } from '../utils/format.js';
 import { InputFile } from 'grammy';
 import { getTranslator } from '../i18n/index.js';
 import { logger } from '../utils/logger.js';
+import { config } from '../config/index.js';
 
 // Initiate payment for a booking (Chapa or manual).
 // Returns: { payment, checkoutUrl? }
@@ -41,10 +42,10 @@ export async function initiatePayment({ bookingId, method = 'chapa', ctx }) {
       amount: booking.total_price,
       currency: 'ETB',
       bookingId,
-      customerEmail: ctx?.from?.username ? `${ctx.from.username}@telegram.bot` : undefined,
+      customerEmail: ctx?.from?.username ? `${ctx.from.username}@gmail.com` : undefined,
       customerPhone: ctx?.dbUser?.phone,
-      callbackUrl: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/api/payments/chapa/webhook`,
-      returnUrl: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/payment/success`,
+      callbackUrl: `${config.publicUrl}/api/payments/chapa/webhook`,
+      returnUrl: `${config.publicUrl}/payment/success`,
     });
 
     // Create payment record

@@ -36,33 +36,48 @@ export async function showPaymentOptions(ctx, bookingId) {
 
 // Initiate Chapa payment flow.
 async function handleChapaPayment(ctx, bookingId) {
-  const { payment, checkoutUrl } = await initiatePayment({
-    bookingId,
-    method: 'chapa',
-    ctx,
-  });
+  // Let user know we're processing
+  await ctx.reply(ctx.t('common.loading'));
 
-  // Store payment session
-  setFlowSession(ctx.from.id, {
-    flow: Flow.PAYMENT,
-    bookingId,
-    paymentId: payment.id,
-    txRef: payment.reference,
-    method: PaymentMethod.CHAPA,
-  });
+  try {
+    const { payment, checkoutUrl } = await initiatePayment({
+      bookingId,
+      method: 'chapa',
+      ctx,
+    });
 
-  const kb = new InlineKeyboard()
-    .url(ctx.t('payment.chapa_checkout_button'), checkoutUrl)
-    .row()
-    .text(ctx.t('payment.check_status'), `pay:check:${bookingId}`)
-    .row()
-    .text(ctx.t('common.cancel'), 'pay:cancel');
+    // Store payment session
+    setFlowSession(ctx.from.id, {
+      flow: Flow.PAYMENT,
+      bookingId,
+      paymentId: payment.id,
+      txRef: payment.reference,
+      method: PaymentMethod.CHAPA,
+    });
 
-  await ctx.reply(
-    `${ctx.t('payment.chapa_instructions')}\n\n` +
-    `💰 ${formatMoney(payment.amount)} ${currency}`,
-    { reply_markup: kb }
-  );
+    const kb = new InlineKeyboard()
+      .url(ctx.t('payment.chapa_checkout_button'), checkoutUrl)
+      .row()
+      .text(ctx.t('payment.check_status'), `pay:check:${bookingId}`)
+      .row()
+      .text(ctx.t('common.cancel'), 'pay:cancel');
+
+    await ctx.reply(
+      `${ctx.t('payment.chapa_instructions')}\n\n` +
+      `💰 ${formatMoney(payment.amount)} ${currency}`,
+      { reply_markup: kb }
+    );
+  } catch (err) {
+    logger.error('Chapa payment initiation failed', {
+      bookingId,
+      error: err.message,
+    });
+
+    // Show visible error message — not just a toast
+    await ctx.reply(`❌ *${ctx.t('payment.payment_failed')}*`, {
+      parse_mode: 'Markdown',
+    });
+  }
 }
 
 // Initiate manual transfer payment flow.

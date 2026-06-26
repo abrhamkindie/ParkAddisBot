@@ -143,7 +143,7 @@ export function registerBooking(bot) {
         total: formatMoney(booking.total_price),
         currency,
       }) +
-      `\n\n_${ctx.t('payment.next_step')}_`;
+      `\n\n_${ctx.t('booking.next_step')}_`;
 
     await ctx.editMessageText(text, { parse_mode: 'Markdown' });
 
