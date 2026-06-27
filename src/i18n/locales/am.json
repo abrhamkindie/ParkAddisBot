@@ -186,7 +186,8 @@
     "already_paid": "ይህ ማስያዣ ቀድሞ ተከፍሏል።",
     "payment_failed": "ክፍያ አልተሳካም። እባክዎ እንደገና ይሞክሩ ወይም በእጅ ዝውውር ይምረጡ።",
     "check_status": "🔄 የክፍያ ሁኔታ ይመልከቱ",
-    "verify_instructions": "የክፍያ ሁኔታዎን ለማረጋገጥ ከታች ይንኩ:"
+    "verify_instructions": "የክፍያ ሁኔታዎን ለማረጋገጥ ከታች ይንኩ:",
+    "qr_instruction": "የመግቢያ QR ኮድዎ ቀጥሎ ይላካል።"
   },
   "rating": {
     "prompt_title": "የማቆሚያ ልምድዎ እንዴት ነበር?",

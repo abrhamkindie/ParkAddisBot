@@ -176,7 +176,7 @@ export async function sendPaymentReceipt(ctx, booking, payment) {
       total: mdEscape(formatMoney(booking.total_price)),
       currency: mdEscape(currency),
     })}\n\n` +
-    `_${t('payment.qr_instruction')}_`;
+    `_${mdEscape(t('payment.qr_instruction'))}_`;
 
   // Send receipt text
   await ctx.reply(receiptText, { parse_mode: 'Markdown' });

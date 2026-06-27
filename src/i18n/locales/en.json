@@ -187,7 +187,8 @@
     "already_paid": "This booking has already been paid.",
     "payment_failed": "Payment failed. Please try again or select manual transfer.",
     "check_status": "🔄 Check Payment Status",
-    "verify_instructions": "Tap below to verify your payment status:"
+    "verify_instructions": "Tap below to verify your payment status:",
+    "qr_instruction": "Your check-in QR code will be sent next."
   },
   "rating": {
     "prompt_title": "How was your parking experience?",
